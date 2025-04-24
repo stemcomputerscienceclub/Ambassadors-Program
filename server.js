@@ -59,7 +59,7 @@ let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with better configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/ambassadors?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const mongooseOptions = {
   useNewUrlParser: true,
