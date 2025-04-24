@@ -59,7 +59,7 @@ let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with better configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/ambassadors?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const mongooseOptions = {
   useNewUrlParser: true,
@@ -76,7 +76,10 @@ const mongooseOptions = {
   serverSelectionTryOnce: false,
   waitQueueTimeoutMS: 30000,
   keepAlive: true,
-  keepAliveInitialDelay: 300000
+  keepAliveInitialDelay: 300000,
+  maxIdleTimeMS: 120000,
+  autoIndex: true,
+  autoCreate: true
 };
 
 // Add connection event handlers
@@ -104,9 +107,11 @@ mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
 });
 
-// Function to connect to MongoDB with retry
+// Function to connect to MongoDB with exponential backoff
 async function connectWithRetry() {
   let retries = 5;
+  let delay = 1000; // Start with 1 second delay
+
   while (retries > 0) {
     try {
       await mongoose.connect(MONGODB_URI, mongooseOptions);
@@ -115,6 +120,7 @@ async function connectWithRetry() {
     } catch (err) {
       console.error(`MongoDB connection error (${retries} retries left):`, err);
       retries--;
+      
       if (retries === 0) {
         console.error('Failed to connect to MongoDB after all retries');
         if (process.env.NODE_ENV !== 'production') {
@@ -122,7 +128,11 @@ async function connectWithRetry() {
         }
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Exponential backoff: wait longer between each retry
+      delay *= 2;
+      console.log(`Waiting ${delay}ms before retrying...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 }
@@ -205,7 +215,10 @@ app.post('/api/register', async (req, res) => {
     // Check if user already exists with retry
     let existingUser;
     try {
-      existingUser = await User.findOne({ email }).maxTimeMS(30000);
+      existingUser = await User.findOne({ email })
+        .maxTimeMS(30000)
+        .lean()
+        .exec();
     } catch (err) {
       console.error('Error checking for existing user:', err);
       if (err.name === 'MongooseServerSelectionError') {
