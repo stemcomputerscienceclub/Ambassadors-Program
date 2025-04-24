@@ -59,18 +59,41 @@ let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with better configuration
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+
+const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 10s
-  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-  family: 4 // Use IPv4, skip trying IPv6
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch((err) => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1); // Exit if we can't connect to MongoDB
-});
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4,
+  retryWrites: true,
+  retryReads: true,
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  connectTimeoutMS: 10000
+};
+
+mongoose.connect(MONGODB_URI, mongooseOptions)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+    if (err.name === 'MongooseServerSelectionError') {
+      console.error('\nIMPORTANT: Please whitelist the following IP addresses in MongoDB Atlas:');
+      console.error('1. Go to MongoDB Atlas Dashboard');
+      console.error('2. Click on "Network Access"');
+      console.error('3. Click "Add IP Address"');
+      console.error('4. Click "Allow Access from Anywhere" (0.0.0.0/0) for development');
+      console.error('   OR add specific Vercel IP ranges');
+      console.error('5. Click "Confirm"');
+    }
+    // Don't exit in production, just log the error
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
+  });
 
 // MongoDB Models
 const userSchema = new mongoose.Schema({
