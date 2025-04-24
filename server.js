@@ -59,41 +59,66 @@ let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with better configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/ambassadors?retryWrites=true&w=majority';
 
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 30000, // Increased timeout
   socketTimeoutMS: 45000,
   family: 4,
   retryWrites: true,
   retryReads: true,
   maxPoolSize: 10,
   minPoolSize: 5,
-  connectTimeoutMS: 10000
+  connectTimeoutMS: 30000, // Increased timeout
+  heartbeatFrequencyMS: 10000,
+  serverSelectionTryOnce: false // Enable retry
 };
 
-mongoose.connect(MONGODB_URI, mongooseOptions)
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    if (err.name === 'MongooseServerSelectionError') {
-      console.error('\nIMPORTANT: Please whitelist the following IP addresses in MongoDB Atlas:');
-      console.error('1. Go to MongoDB Atlas Dashboard');
-      console.error('2. Click on "Network Access"');
-      console.error('3. Click "Add IP Address"');
-      console.error('4. Click "Allow Access from Anywhere" (0.0.0.0/0) for development');
-      console.error('   OR add specific Vercel IP ranges');
-      console.error('5. Click "Confirm"');
+// Add connection event handlers
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected successfully');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
+
+// Function to connect to MongoDB with retry
+async function connectWithRetry() {
+  let retries = 5;
+  while (retries > 0) {
+    try {
+      await mongoose.connect(MONGODB_URI, mongooseOptions);
+      console.log('Successfully connected to MongoDB');
+      return;
+    } catch (err) {
+      console.error(`MongoDB connection error (${retries} retries left):`, err);
+      retries--;
+      if (retries === 0) {
+        console.error('Failed to connect to MongoDB after all retries');
+        if (process.env.NODE_ENV !== 'production') {
+          process.exit(1);
+        }
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
     }
-    // Don't exit in production, just log the error
-    if (process.env.NODE_ENV !== 'production') {
-      process.exit(1);
-    }
-  });
+  }
+}
+
+// Connect to MongoDB
+connectWithRetry().catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
+});
 
 // MongoDB Models
 const userSchema = new mongoose.Schema({
@@ -162,8 +187,15 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
-    // Check if user already exists with timeout
-    const existingUser = await User.findOne({ email }).maxTimeMS(5000);
+    // Check if user already exists with retry
+    let existingUser;
+    try {
+      existingUser = await User.findOne({ email }).maxTimeMS(30000);
+    } catch (err) {
+      console.error('Error checking for existing user:', err);
+      return res.status(503).json({ message: 'Database connection error. Please try again.' });
+    }
+
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
