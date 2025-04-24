@@ -59,7 +59,7 @@ let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with better configuration
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/ambassadors?retryWrites=true&w=majority&appName=Cluster0';
 
 const mongooseOptions = {
   useNewUrlParser: true,
@@ -107,13 +107,14 @@ mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
 });
 
-// Function to connect to MongoDB with exponential backoff
+// Function to connect to MongoDB with retry
 async function connectWithRetry() {
   let retries = 5;
   let delay = 1000; // Start with 1 second delay
 
   while (retries > 0) {
     try {
+      console.log(`Attempting to connect to MongoDB (${retries} retries left)...`);
       await mongoose.connect(MONGODB_URI, mongooseOptions);
       console.log('Successfully connected to MongoDB');
       return;
@@ -215,10 +216,12 @@ app.post('/api/register', async (req, res) => {
     // Check if user already exists with retry
     let existingUser;
     try {
+      console.log('Checking for existing user...');
       existingUser = await User.findOne({ email })
         .maxTimeMS(30000)
         .lean()
         .exec();
+      console.log('User check completed');
     } catch (err) {
       console.error('Error checking for existing user:', err);
       if (err.name === 'MongooseServerSelectionError') {
