@@ -64,29 +64,6 @@ function updateReferralCounts() {
     });
 
     console.log('Referral counts:', referralCounts);
-    
-    // Create or get the counts sheet
-    let countsSheet = spreadsheet.getSheetByName('Referral Counts');
-    if (!countsSheet) {
-      countsSheet = spreadsheet.insertSheet('Referral Counts');
-      countsSheet.appendRow(['Referral Code', 'Count']);
-    }
-    
-    // Clear existing data except header
-    if (countsSheet.getLastRow() > 1) {
-      countsSheet.getRange(2, 1, countsSheet.getLastRow() - 1, 2).clear();
-    }
-    
-    // Write new counts
-    const countsData = Object.entries(referralCounts).map(([code, count]) => [code, count]);
-    if (countsData.length > 0) {
-      countsSheet.getRange(2, 1, countsData.length, 2).setValues(countsData);
-    }
-    
-    // Sort by count descending
-    if (countsSheet.getLastRow() > 1) {
-      countsSheet.getRange(2, 1, countsSheet.getLastRow() - 1, 2).sort({column: 2, ascending: false});
-    }
 
     // Post the counts to the server
     const payload = {
@@ -96,21 +73,13 @@ function updateReferralCounts() {
       }))
     };
 
-    // Get the API key from script properties
-    const scriptProperties = PropertiesService.getScriptProperties();
-    const API_KEY = scriptProperties.getProperty('API_KEY');
-
     const options = {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify(payload),
-      muteHttpExceptions: true,
-      headers: {
-        'Authorization': 'Bearer ' + API_KEY
-      }
+      muteHttpExceptions: true
     };
 
-    // Replace with your actual public server URL
     const SERVER_URL = 'https://ambassador.stemcsclub.org';
     const response = UrlFetchApp.fetch(SERVER_URL + '/api/update-referral-counts', options);
     
@@ -144,16 +113,4 @@ function createFormSubmitTrigger() {
     .forSpreadsheet(SpreadsheetApp.openById('1fmmclCGfecEG7Q7oldqxWWO8yQL1QFJ5BWlAhaKv3qE'))
     .onFormSubmit()
     .create();
-}
-
-// Function to set up the API key
-function setupAPIKey() {
-  const ui = SpreadsheetApp.getUi();
-  const response = ui.prompt('Set API Key', 'Please enter your API key:', ui.ButtonSet.OK_CANCEL);
-  
-  if (response.getSelectedButton() === ui.Button.OK) {
-    const API_KEY = response.getResponseText();
-    PropertiesService.getScriptProperties().setProperty('API_KEY', API_KEY);
-    ui.alert('API key has been set successfully!');
-  }
 } 
