@@ -58,20 +58,20 @@ try {
 let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
-// MongoDB Connection with better configuration
+// MongoDB Connection with improved configuration
 const MONGODB_URI = process.env.MONGODB_URI;
 
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,
+  serverSelectionTimeoutMS: 30000, // Increased from 5000
   socketTimeoutMS: 45000,
   family: 4,
   retryWrites: true,
   retryReads: true,
   maxPoolSize: 50,
   minPoolSize: 10,
-  connectTimeoutMS: 30000,
+  connectTimeoutMS: 30000, // Increased from 10000
   heartbeatFrequencyMS: 10000,
   waitQueueTimeoutMS: 30000,
   keepAlive: true,
@@ -147,7 +147,9 @@ connectWithRetry().catch(err => {
 
 // MongoDB Models
 const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
   password: { type: String, required: true },
   verified: { type: Boolean, default: false },
   referralCode: { type: String, unique: true },
@@ -197,38 +199,56 @@ function generateVerificationToken() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+// Function to generate the next referral code
+async function generateNextReferralCode() {
+  try {
+    // Find the highest existing referral code number
+    const lastUser = await User.findOne({}, {}, { sort: { 'referralCode': -1 } });
+    let nextNumber = 1;
+    
+    if (lastUser && lastUser.referralCode) {
+      const lastNumber = parseInt(lastUser.referralCode.split('-')[2]);
+      nextNumber = lastNumber + 1;
+    }
+    
+    // Format the number with leading zeros
+    const formattedNumber = nextNumber.toString().padStart(3, '0');
+    return `STEM-CSC-${formattedNumber}`;
+  } catch (error) {
+    console.error('Error generating referral code:', error);
+    throw error;
+  }
+}
+
 // Register new user with better error handling
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { name, email, phone, password } = req.body;
+
+    // Validate inputs
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
 
     // Validate email format
-    if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) || email.includes('..')) {
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) || email.includes('..')) {
       return res.status(400).json({ message: 'Invalid email format' });
     }
 
     // Validate password
-    if (!password || password.length < 8) {
+    if (password.length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
-    // Check if user already exists with retry
+    // Check if user already exists
     let existingUser;
     try {
-      console.log('Checking for existing user...');
       existingUser = await User.findOne({ email })
         .maxTimeMS(30000)
         .lean()
         .exec();
-      console.log('User check completed');
     } catch (err) {
       console.error('Error checking for existing user:', err);
-      if (err.name === 'MongooseServerSelectionError') {
-        return res.status(503).json({ 
-          message: 'Database connection error. Please try again later.',
-          error: 'IP whitelist issue detected'
-        });
-      }
       return res.status(503).json({ message: 'Database connection error. Please try again.' });
     }
 
@@ -239,28 +259,23 @@ app.post('/api/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user without referral code
+    // Generate verification token
+    const verificationToken = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Create new user
     const user = new User({
+      name,
       email,
-      password: hashedPassword
+      phone,
+      password: hashedPassword,
+      verificationToken
     });
 
     await user.save();
 
-    // Generate OTP
-    const otp = generateOTP();
-    const verificationToken = generateVerificationToken();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    // Save OTP
-    const otpRecord = new OTP({
-      email,
-      otp,
-      verificationToken,
-      expiresAt
-    });
-
-    await otpRecord.save();
+    // Generate verification link
+    const verificationLink = `${process.env.FRONTEND_URL}/verify?token=${verificationToken}`;
 
     try {
       // Send verification email
@@ -269,9 +284,20 @@ app.post('/api/register', async (req, res) => {
         to: email,
         subject: 'Verify your email for CS & Tech Ambassadors Program',
         html: `
-          <h1>Welcome to CS & Tech Ambassadors Program!</h1>
-          <p>Your verification code is: <strong>${otp}</strong></p>
-          <p>This code will expire in 15 minutes.</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #4a90e2;">Welcome to CS & Tech Ambassadors Program!</h1>
+            <p>Hello ${name},</p>
+            <p>Thank you for registering as an Ambassador. To complete your registration, please click the button below to verify your email address:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${verificationLink}" style="background-color: #4a90e2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                Verify Email Address
+              </a>
+            </div>
+            <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
+            <p style="word-break: break-all;">${verificationLink}</p>
+            <p>This link will expire in 15 minutes.</p>
+            <p>Best regards,<br>CS & Tech Ambassadors Team</p>
+          </div>
         `
       };
 
@@ -282,68 +308,48 @@ app.post('/api/register', async (req, res) => {
       });
     } catch (emailError) {
       console.error('Email sending error:', emailError);
-      // If email fails, delete the user and OTP records
       await User.deleteOne({ email });
-      await OTP.deleteOne({ email });
       return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
     }
   } catch (error) {
     console.error('Registration error:', error);
-    if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
-      res.status(503).json({ message: 'Database connection timed out. Please try again.' });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Verify OTP
-app.post('/api/verify-otp', async (req, res) => {
+// Verify email with token
+app.get('/api/verify', async (req, res) => {
   try {
-    const { email, otp, verificationToken } = req.body;
+    const { token } = req.query;
 
-    // Find OTP record
-    const otpRecord = await OTP.findOne({
-      email,
-      verificationToken,
-      expiresAt: { $gt: new Date() }
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({ message: 'Invalid or expired verification code' });
+    if (!token) {
+      return res.status(400).json({ message: 'Verification token is required' });
     }
 
-    if (otpRecord.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid verification code' });
+    // Find user with matching token
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
     }
 
-    // Generate unique referral code
-    const userReferralCode = `STEM-CSC-${Math.floor(100 + Math.random() * 900)}`;
+    // Generate referral code
+    const referralCode = await generateNextReferralCode();
 
-    // Update user verification status and add referral code
-    await User.updateOne(
-      { email },
-      { 
-        verified: true,
-        referralCode: userReferralCode
-      }
-    );
-
-    // Delete used OTP
-    await OTP.deleteOne({ _id: otpRecord._id });
+    // Update user
+    user.verified = true;
+    user.referralCode = referralCode;
+    user.verificationToken = undefined;
+    await user.save();
 
     // Generate JWT token
-    const token = jwt.sign(
-      { email },
+    const authToken = jwt.sign(
+      { email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({
-      message: 'Email verified successfully',
-      token,
-      referralCode: userReferralCode
-    });
+    // Redirect to dashboard with token
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${authToken}`);
   } catch (error) {
     console.error('Verification error:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -587,7 +593,7 @@ app.get('/api/referral-stats', async (req, res) => {
     }
 });
 
-// Endpoint to receive referral counts from Google Apps Script
+// Update the referral counts endpoint with better error handling
 app.post('/api/update-referral-counts', async (req, res) => {
   console.log('Received request to update referral counts');
   console.log('Request body:', req.body);
@@ -602,25 +608,43 @@ app.post('/api/update-referral-counts', async (req, res) => {
 
     console.log('Processing referral counts batch:', referralCounts);
 
-    // Process each referral count with a timeout
+    // Process each referral count with a timeout and retry
     const results = await Promise.all(referralCounts.map(async ({ code, count }) => {
       console.log(`Processing referral code ${code} with count ${count}`);
-      try {
-        const startTime = Date.now();
-        const result = await User.updateOne(
-          { referralCode: code },
-          { $set: { referralCount: count } },
-          { maxTimeMS: 5000 } // 5 second timeout
-        );
-        const endTime = Date.now();
-        console.log(`Update for ${code} completed in ${endTime - startTime}ms`);
-        console.log(`Update result for ${code}:`, result);
-        return { code, success: true, modified: result.modifiedCount };
-      } catch (error) {
-        console.error(`Error updating ${code}:`, error);
-        console.error(`Error stack for ${code}:`, error.stack);
-        return { code, success: false, error: error.message };
+      let retries = 3;
+      let lastError = null;
+
+      while (retries > 0) {
+        try {
+          const startTime = Date.now();
+          const result = await User.updateOne(
+            { referralCode: code },
+            { $set: { referralCount: count } },
+            { maxTimeMS: 30000 } // Increased timeout
+          );
+          const endTime = Date.now();
+          console.log(`Update for ${code} completed in ${endTime - startTime}ms`);
+          console.log(`Update result for ${code}:`, result);
+          return { code, success: true, modified: result.modifiedCount };
+        } catch (error) {
+          console.error(`Error updating ${code} (${retries} retries left):`, error);
+          lastError = error;
+          retries--;
+          
+          if (retries > 0) {
+            const delay = Math.pow(2, 3 - retries) * 1000; // Exponential backoff
+            console.log(`Waiting ${delay}ms before retrying...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
       }
+
+      return { 
+        code, 
+        success: false, 
+        error: lastError?.message || 'Unknown error',
+        stack: lastError?.stack
+      };
     }));
 
     // Check for any failures
