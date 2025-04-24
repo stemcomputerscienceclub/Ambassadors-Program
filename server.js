@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
+import fs from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
@@ -28,24 +29,27 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.static('public'));
 
-import fs from 'fs';
-
 // Load google credentials from file
 const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || './credentials.json';
 
 let googleAuth;
 let sheets;
 try {
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
-  googleAuth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-  });
-  sheets = google.sheets({ version: 'v4', auth: googleAuth });
-  console.log('Google API credentials loaded from:', CREDENTIALS_PATH);
+  if (fs.existsSync(CREDENTIALS_PATH)) {
+    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
+    googleAuth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+    sheets = google.sheets({ version: 'v4', auth: googleAuth });
+    console.log('Google API credentials loaded from:', CREDENTIALS_PATH);
+  } else {
+    console.log('Google API credentials file not found. Google Sheets integration will be disabled.');
+    googleAuth = null;
+    sheets = null;
+  }
 } catch (error) {
   console.error('Failed to load Google API credentials:', error.message);
-  // Disable Google Sheets API access
   googleAuth = null;
   sheets = null;
 }
@@ -54,14 +58,18 @@ try {
 let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/cs-tech-ambassadors', {
+// MongoDB Connection with better configuration
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 10s
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+  family: 4 // Use IPv4, skip trying IPv6
 }).then(() => {
   console.log('Connected to MongoDB');
 }).catch((err) => {
   console.error('MongoDB connection error:', err);
+  process.exit(1); // Exit if we can't connect to MongoDB
 });
 
 // MongoDB Models
@@ -131,8 +139,8 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists with timeout
+    const existingUser = await User.findOne({ email }).maxTimeMS(5000);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -190,7 +198,11 @@ app.post('/api/register', async (req, res) => {
     }
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+      res.status(503).json({ message: 'Database connection timed out. Please try again.' });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 });
 
