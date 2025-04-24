@@ -73,7 +73,6 @@ const mongooseOptions = {
   minPoolSize: 10,
   connectTimeoutMS: 30000,
   heartbeatFrequencyMS: 10000,
-  serverSelectionTryOnce: false,
   waitQueueTimeoutMS: 30000,
   keepAlive: true,
   keepAliveInitialDelay: 300000,
