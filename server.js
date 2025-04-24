@@ -59,21 +59,24 @@ let lastUpdateTime = new Date();
 const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with better configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/ambassadors?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://CSC:w52srmPwuXPr8Fj3@cluster0.nvcjru6.mongodb.net/ambassadors?retryWrites=true&w=majority&appName=Cluster0';
 
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000, // Increased timeout
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   family: 4,
   retryWrites: true,
   retryReads: true,
-  maxPoolSize: 10,
-  minPoolSize: 5,
-  connectTimeoutMS: 30000, // Increased timeout
+  maxPoolSize: 50,
+  minPoolSize: 10,
+  connectTimeoutMS: 30000,
   heartbeatFrequencyMS: 10000,
-  serverSelectionTryOnce: false // Enable retry
+  serverSelectionTryOnce: false,
+  waitQueueTimeoutMS: 30000,
+  keepAlive: true,
+  keepAliveInitialDelay: 300000
 };
 
 // Add connection event handlers
@@ -83,6 +86,18 @@ mongoose.connection.on('connected', () => {
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
+  if (err.name === 'MongooseServerSelectionError') {
+    console.error('\nIMPORTANT: MongoDB Atlas IP Whitelist Issue');
+    console.error('Please add the following IP ranges to your MongoDB Atlas whitelist:');
+    console.error('1. Go to MongoDB Atlas Dashboard');
+    console.error('2. Click on "Network Access"');
+    console.error('3. Click "Add IP Address"');
+    console.error('4. Add these Vercel IP ranges:');
+    console.error('   - 76.76.21.0/24');
+    console.error('   - 76.76.22.0/24');
+    console.error('   - 76.76.23.0/24');
+    console.error('5. Click "Confirm"');
+  }
 });
 
 mongoose.connection.on('disconnected', () => {
@@ -107,7 +122,7 @@ async function connectWithRetry() {
         }
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 }
@@ -193,6 +208,12 @@ app.post('/api/register', async (req, res) => {
       existingUser = await User.findOne({ email }).maxTimeMS(30000);
     } catch (err) {
       console.error('Error checking for existing user:', err);
+      if (err.name === 'MongooseServerSelectionError') {
+        return res.status(503).json({ 
+          message: 'Database connection error. Please try again later.',
+          error: 'IP whitelist issue detected'
+        });
+      }
       return res.status(503).json({ message: 'Database connection error. Please try again.' });
     }
 
