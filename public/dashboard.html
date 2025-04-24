@@ -6,43 +6,86 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
     <title>Ambassador Dashboard | STEM October CS & Tech Club</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4a90e2;
+            --primary-dark: #357abd;
             --secondary-color: #2c3e50;
             --accent-color: #e74c3c;
+            --success-color: #2ecc71;
             --light-bg: #f8f9fa;
             --dark-bg: #343a40;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--light-bg);
             color: var(--secondary-color);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            padding: 1rem 0;
+        }
+
+        .navbar img {
+            height: 40px;
+        }
+
+        .logout-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+        }
+
+        .logout-btn:hover {
+            background-color: var(--primary-dark);
         }
 
         .dashboard-container {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
 
         .header {
             background-color: white;
-            padding: 20px;
+            padding: 2rem;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: var(--secondary-color);
+            opacity: 0.8;
+            font-size: 1.1rem;
         }
 
         .stats-card {
             background-color: white;
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-speed);
+            height: 100%;
+            text-align: center;
         }
 
         .stats-card:hover {
@@ -52,52 +95,92 @@
         .stats-card h3 {
             color: var(--primary-color);
             font-size: 1.2rem;
-            margin-bottom: 10px;
+            margin-bottom: 1rem;
         }
 
         .stats-card .value {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: bold;
             color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-card p {
+            color: var(--secondary-color);
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .referral-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .referral-section h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
         }
 
         .referral-code {
             background-color: var(--primary-color);
             color: white;
-            padding: 15px;
+            padding: 1.5rem;
             border-radius: 10px;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .referral-code h4 {
-            margin-bottom: 10px;
-        }
-
-        .referral-code .code {
-            font-size: 1.5rem;
+            margin: 1rem 0;
+            font-size: 1.8rem;
             font-weight: bold;
             letter-spacing: 2px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .copy-btn {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
         }
 
         .leaderboard {
             background-color: white;
             border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
         }
 
         .leaderboard h3 {
             color: var(--primary-color);
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
         }
 
         .leaderboard-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color var(--transition-speed);
+        }
+
+        .leaderboard-item:hover {
+            background-color: var(--light-bg);
         }
 
         .leaderboard-item:last-child {
@@ -107,37 +190,37 @@
         .rank {
             font-weight: bold;
             color: var(--primary-color);
+            font-size: 1.2rem;
+            min-width: 50px;
         }
 
         .user-info {
             flex-grow: 1;
-            margin: 0 15px;
+            margin: 0 1rem;
+        }
+
+        .user-info div {
+            font-weight: 600;
+        }
+
+        .user-info small {
+            color: var(--secondary-color);
+            opacity: 0.8;
         }
 
         .count {
             font-weight: bold;
             color: var(--accent-color);
+            font-size: 1.2rem;
+            min-width: 100px;
+            text-align: right;
         }
 
-        .update-timer {
+        .update-info {
             text-align: center;
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 20px;
-        }
-
-        .copy-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .copy-btn:hover {
-            background-color: #357abd;
+            color: var(--secondary-color);
+            opacity: 0.8;
+            margin-top: 1rem;
         }
 
         .toast {
@@ -145,83 +228,108 @@
             top: 20px;
             right: 20px;
             z-index: 1000;
+            background-color: var(--success-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 5px;
+            box-shadow: var(--card-shadow);
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                margin: 1rem auto;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-card .value {
+                font-size: 2rem;
+            }
+
+            .referral-code {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <nav>
+    <nav class="navbar">
         <div class="container">
             <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo"></a>
-            <ul>
-                <li><button class="logout-btn" onclick="handleLogout()">Logout</button></li>
-            </ul>
+            <button class="logout-btn" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
         </div>
     </nav>
-    <main class="dashboard-main">
-        <div class="dashboard-container">
-            <div class="header">
-                <h1>Welcome, <span id="userName">Loading...</span>!</h1>
-                <p class="text-muted">Your Ambassador Dashboard</p>
-            </div>
 
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="stats-card">
-                        <h3>Your Rank</h3>
-                        <div class="value" id="userRank">#0</div>
-                        <p class="text-muted">out of <span id="totalAmbassadors">0</span> ambassadors</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card">
-                        <h3>Referrals</h3>
-                        <div class="value" id="referralCount">0</div>
-                        <p class="text-muted">successful referrals</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card">
-                        <h3>Next Update</h3>
-                        <div class="value" id="timeUntilUpdate">00:00:00</div>
-                        <p class="text-muted">until next leaderboard update</p>
-                    </div>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Welcome, <span id="userName">Loading...</span>!</h1>
+            <p>Your Ambassador Dashboard</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <h3>Your Rank</h3>
+                    <div class="value" id="userRank">#0</div>
+                    <p>out of <span id="totalAmbassadors">0</span> ambassadors</p>
                 </div>
             </div>
-
-            <div class="referral-code">
-                <h4>Your Referral Code</h4>
-                <div class="code" id="referralCode">Loading...</div>
-                <button class="copy-btn mt-3" onclick="copyReferralCode()">
-                    <i class="fas fa-copy"></i> Copy Code
-                </button>
-            </div>
-
-            <div class="leaderboard">
-                <h3>Top Ambassadors</h3>
-                <div id="leaderboardList">
-                    <!-- Leaderboard items will be inserted here -->
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <h3>Referrals</h3>
+                    <div class="value" id="referralCount">0</div>
+                    <p>successful referrals</p>
                 </div>
             </div>
-
-            <div class="update-timer">
-                Last updated: <span id="lastUpdate">Never</span>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <h3>Next Update</h3>
+                    <div class="value" id="timeUntilUpdate">00:00:00</div>
+                    <p>until next leaderboard update</p>
+                </div>
             </div>
         </div>
-    </main>
 
-    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <strong class="me-auto">Success</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        <div class="referral-section">
+            <h4>Your Referral Code</h4>
+            <div class="referral-code" id="referralCode">Loading...</div>
+            <button class="copy-btn" onclick="copyReferralCode()">
+                <i class="fas fa-copy"></i> Copy Code
+            </button>
         </div>
-        <div class="toast-body">
-            Referral code copied to clipboard!
+
+        <div class="leaderboard">
+            <h3>Top Ambassadors</h3>
+            <div id="leaderboardList">
+                <!-- Leaderboard items will be inserted here -->
+            </div>
+        </div>
+
+        <div class="update-info">
+            Last updated: <span id="lastUpdate">Never</span>
         </div>
     </div>
 
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i> Referral code copied to clipboard!
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let dashboardData = null;
-        const toast = new bootstrap.Toast(document.querySelector('.toast'));
+        const toast = document.getElementById('toast');
+
+        function showToast() {
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
 
         async function fetchDashboardData() {
             try {
@@ -273,7 +381,7 @@
                     <div class="rank">#${index + 1}</div>
                     <div class="user-info">
                         <div>${ambassador.name}</div>
-                        <small class="text-muted">${ambassador.referralCode}</small>
+                        <small>${ambassador.referralCode}</small>
                     </div>
                     <div class="count">${ambassador.referralCount} referrals</div>
                 `;
@@ -304,13 +412,12 @@
         function copyReferralCode() {
             const code = dashboardData.referralCode;
             navigator.clipboard.writeText(code).then(() => {
-                toast.show();
+                showToast();
             }).catch(err => {
                 console.error('Failed to copy referral code:', err);
             });
         }
 
-        // Handle logout
         function handleLogout() {
             localStorage.removeItem('token');
             localStorage.removeItem('userData');
