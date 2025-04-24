@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
+    <title>Login | STEM October CS & Tech Club</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        .auth-container {
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header img {
+            width: 80px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .auth-header h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #4a90e2;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .auth-footer a {
+            color: #4a90e2;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .auth-footer a:hover {
+            color: #357abd;
+        }
+
+        @media (max-width: 768px) {
+            .auth-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .auth-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo"></a>
+            <ul>
+                <li><a href="/">Home</a></li>
+            </ul>
+        </div>
+    </nav>
+    <main>
+        <div class="auth-container">
+            <div class="auth-header">
+                <img src="./images/logo.png" alt="CS & Tech Club Logo">
+                <h1>Welcome Back</h1>
+                <p>Sign in to your Ambassador account</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                    <div id="emailError" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    <div id="passwordError" class="error-message"></div>
+                </div>
+                <button type="submit" class="btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="./signup.html">Sign Up</a></p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        // Clear error message
+        function clearError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Clear previous errors
+            clearError('emailError');
+            clearError('passwordError');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 400) {
+                        showError('emailError', data.message);
+                    } else {
+                        showError('emailError', 'Login failed. Please try again.');
+                    }
+                    return;
+                }
+
+                // Store token and redirect
+                localStorage.setItem('token', data.token);
+                window.location.href = '/dashboard.html';
+
+            } catch (error) {
+                console.error('Error during login:', error);
+                showError('emailError', 'An error occurred. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

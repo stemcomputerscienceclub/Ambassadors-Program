@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
+    <title>Ambassador Dashboard | STEM October CS & Tech Club</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card i {
+            font-size: 2rem;
+            color: #4a90e2;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card h3 {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .referral-code {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #4a90e2;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .copy-btn {
+            background: rgba(74, 144, 226, 0.1);
+            color: #4a90e2;
+            border: 2px solid #4a90e2;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 0 auto;
+        }
+
+        .copy-btn:hover {
+            background: #4a90e2;
+            color: #fff;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0.5rem 0;
+        }
+
+        .update-info {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .content-section h2 {
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .leaderboard-header {
+            display: grid;
+            grid-template-columns: 80px 1fr 100px;
+            padding: 1rem;
+            background: rgba(74, 144, 226, 0.1);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .leaderboard-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 100px;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .leaderboard-item.current-user {
+            background: rgba(74, 144, 226, 0.1);
+        }
+
+        .marketing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .marketing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            background: rgba(74, 144, 226, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header i {
+            color: #4a90e2;
+            font-size: 1.2rem;
+        }
+
+        .card-header h3 {
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .template {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .template h4 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .template p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+            white-space: pre-line;
+        }
+
+        .graphics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .graphic-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .graphic-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .download-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .download-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .marketing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo"></a>
+            <ul>
+                <li><button class="logout-btn" onclick="handleLogout()">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1>Ambassador Dashboard</h1>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-link"></i>
+                    <h3>Your Referral Code</h3>
+                    <div class="referral-code" id="referralCode">Loading...</div>
+                    <button onclick="copyReferralCode()" class="copy-btn">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h3>Total Referrals</h3>
+                    <div class="stat-number" id="referralCount">-</div>
+                    <div class="update-info">
+                        <div class="last-update">Last update: <span id="lastUpdate">-</span></div>
+                        <div class="next-update">Next update in: <span id="nextUpdate">-</span></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-trophy"></i>
+                    <h3>Your Rank</h3>
+                    <div class="rank-display">
+                        <span class="stat-number" id="userRank">-</span>
+                        <span class="rank-total" id="rankTotal">of -</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Section -->
+            <div class="content-section">
+                <h2>Ambassador Leaderboard</h2>
+                <div class="leaderboard-container">
+                    <div class="leaderboard">
+                        <div class="leaderboard-header">
+                            <span>Rank</span>
+                            <span>Ambassador</span>
+                            <span>Referrals</span>
+                        </div>
+                        <div id="leaderboardList" class="leaderboard-list">
+                            <!-- Leaderboard items will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marketing Materials -->
+            <div class="content-section">
+                <h2>Marketing Materials</h2>
+                <div class="marketing-grid">
+                    <!-- Social Media Templates -->
+                    <div class="marketing-card">
+                        <div class="card-header">
+                            <i class="fas fa-hashtag"></i>
+                            <h3>Social Media Templates</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="template">
+                                <h4>Instagram/X Post</h4>
+                                <p>🚀 Join STEM October's CS & Tech Club! Use my code <span class="referral-placeholder">[Your Code]</span> to register. Learn coding, join projects, and be part of an amazing tech community! #STEMOctober #CodingCommunity</p>
+                                <button onclick="copyTemplate(this)" class="copy-btn">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <div class="template">
+                                <h4>LinkedIn Post</h4>
+                                <p>🎓 Excited to be an Ambassador for STEM October's CS & Tech Club! If you're passionate about technology and want to enhance your skills, join us using my referral code: <span class="referral-placeholder">[Your Code]</span>. Let's build the future together! #STEMEducation #TechCommunity</p>
+                                <button onclick="copyTemplate(this)" class="copy-btn">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Template -->
+                    <div class="marketing-card">
+                        <div class="card-header">
+                            <i class="fas fa-envelope"></i>
+                            <h3>Email Template</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="template">
+                                <h4>Personal Invitation</h4>
+                                <p>Dear [Name],
+
+I hope this email finds you well! I wanted to personally invite you to join STEM October's CS & Tech Club. As an Ambassador, I can vouch for the amazing learning opportunities and community we're building.
+
+The club offers:
+• Hands-on coding workshops
+• Real-world project experience
+• Networking with tech enthusiasts
+• Career development opportunities
+
+You can join using my referral code: <span class="referral-placeholder">[Your Code]</span>
+
+Looking forward to having you in our community!
+
+Best regards,
+[Your Name]</p>
+                                <button onclick="copyTemplate(this)" class="copy-btn">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Promotional Graphics -->
+                    <div class="marketing-card">
+                        <div class="card-header">
+                            <i class="fas fa-images"></i>
+                            <h3>Promotional Graphics</h3>
+                        </div>
+                        <div class="card-content graphics-grid">
+                            <div class="graphic-item">
+                                <img src="./images/promo1.jpg" alt="Promotional Image 1">
+                                <button class="download-btn">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                            <div class="graphic-item">
+                                <img src="./images/promo2.jpg" alt="Promotional Image 2">
+                                <button class="download-btn">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Format time duration
+        function formatTimeRemaining(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            return `${hours}h ${remainingMinutes}m`;
+        }
+
+        // Format date
+        function formatDate(date) {
+            return new Date(date).toLocaleTimeString();
+        }
+
+        // Update countdown timer
+        function updateCountdown(timeUntilUpdate) {
+            const nextUpdateSpan = document.getElementById('nextUpdate');
+            
+            if (timeUntilUpdate <= 0) {
+                nextUpdateSpan.textContent = 'Updating...';
+                nextUpdateSpan.classList.add('updating');
+                setTimeout(() => {
+                    loadUserData(localStorage.getItem('token'));
+                }, 5000);
+                return;
+            }
+
+            nextUpdateSpan.classList.remove('updating');
+            nextUpdateSpan.textContent = formatTimeRemaining(timeUntilUpdate);
+        }
+
+        // Load user data
+        async function loadUserData(token) {
+            try {
+                const response = await fetch('/api/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        handleLogout();
+                        return;
+                    }
+                    throw new Error('Failed to load user data');
+                }
+
+                const data = await response.json();
+                
+                // Update referral code
+                document.getElementById('referralCode').textContent = data.referralCode;
+                
+                // Update stats
+                document.getElementById('referralCount').textContent = data.referralCount || 0;
+                document.getElementById('userRank').textContent = `#${data.rank || 1}`;
+                document.getElementById('rankTotal').textContent = `of ${data.totalAmbassadors || 1}`;
+
+                // Update time info
+                document.getElementById('lastUpdate').textContent = formatDate(data.lastUpdate || new Date());
+                
+                // Start countdown
+                const timeUntilUpdate = data.timeUntilUpdate || 3600000; // Default to 1 hour
+                updateCountdown(timeUntilUpdate);
+                
+                // Update countdown every minute
+                setInterval(() => {
+                    timeUntilUpdate -= 60000; // Subtract one minute
+                    updateCountdown(timeUntilUpdate);
+                }, 60000);
+
+                // Update templates with referral code
+                document.querySelectorAll('.referral-placeholder').forEach(el => {
+                    el.textContent = data.referralCode;
+                });
+
+                // Update leaderboard if available
+                if (data.topAmbassadors && data.topAmbassadors.length > 0) {
+                    const leaderboardList = document.getElementById('leaderboardList');
+                    leaderboardList.innerHTML = data.topAmbassadors.map((ambassador, index) => `
+                        <div class="leaderboard-item ${ambassador.referralCode === data.referralCode ? 'current-user' : ''}">
+                            <span class="rank">${index + 1}</span>
+                            <span class="email">${ambassador.email}</span>
+                            <span class="count">${ambassador.referralCount || 0}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    // Show empty state for leaderboard
+                    const leaderboardList = document.getElementById('leaderboardList');
+                    leaderboardList.innerHTML = '<div class="leaderboard-item">No ambassadors yet. Be the first!</div>';
+                }
+
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                handleLogout();
+            }
+        }
+
+        // Copy referral code
+        function copyReferralCode() {
+            const code = document.getElementById('referralCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy template
+        function copyTemplate(button) {
+            const template = button.previousElementSibling.textContent;
+            navigator.clipboard.writeText(template).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        // Handle logout
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            window.location.href = '/';
+        }
+
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+            loadUserData(token);
+        });
+    </script>
+</body>
+</html>
