@@ -65,18 +65,31 @@ function updateReferralCounts() {
 
     console.log('Referral counts:', referralCounts);
 
-    // Post the counts to the server
-    const payload = {
-      referralCounts: Object.entries(referralCounts).map(([code, count]) => ({
-        code,
-        count
-      }))
-    };
+    // Convert to array and sort by count
+    const referralArray = Object.entries(referralCounts)
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count);
 
+    // Send data in batches of 10
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < referralArray.length; i += BATCH_SIZE) {
+      const batch = referralArray.slice(i, i + BATCH_SIZE);
+      sendBatchToServer(batch);
+    }
+  } catch (error) {
+    console.error('Error in updateReferralCounts:', error);
+  }
+}
+
+function sendBatchToServer(batch, retryCount = 0) {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 5000; // 5 seconds
+
+  try {
     const options = {
       method: 'post',
       contentType: 'application/json',
-      payload: JSON.stringify(payload),
+      payload: JSON.stringify({ referralCounts: batch }),
       muteHttpExceptions: true
     };
 
@@ -84,13 +97,22 @@ function updateReferralCounts() {
     const response = UrlFetchApp.fetch(SERVER_URL + '/api/update-referral-counts', options);
     
     if (response.getResponseCode() === 200) {
-      console.log('Server response:', response.getContentText());
-      console.log('Referral counts updated successfully');
+      console.log('Batch processed successfully:', batch);
     } else {
-      console.error('Server error:', response.getContentText());
+      console.error('Server error for batch:', response.getContentText());
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying batch in ${RETRY_DELAY/1000} seconds... (Attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        Utilities.sleep(RETRY_DELAY);
+        sendBatchToServer(batch, retryCount + 1);
+      }
     }
   } catch (error) {
-    console.error('Error in updateReferralCounts:', error);
+    console.error('Error sending batch:', error);
+    if (retryCount < MAX_RETRIES) {
+      console.log(`Retrying batch in ${RETRY_DELAY/1000} seconds... (Attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      Utilities.sleep(RETRY_DELAY);
+      sendBatchToServer(batch, retryCount + 1);
+    }
   }
 }
 

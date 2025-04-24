@@ -589,38 +589,56 @@ app.get('/api/referral-stats', async (req, res) => {
 
 // Endpoint to receive referral counts from Google Apps Script
 app.post('/api/update-referral-counts', async (req, res) => {
-    try {
-        const { referralCounts } = req.body;
-        
-        if (!referralCounts || !Array.isArray(referralCounts)) {
-            return res.status(400).json({ message: 'Invalid referral counts data' });
-        }
-
-        console.log('Received referral counts:', referralCounts);
-
-        // Update referral counts in the database
-        for (const { code, count } of referralCounts) {
-            const result = await User.updateOne(
-                { referralCode: code },
-                { $set: { referralCount: count } }
-            );
-            console.log(`Updated ${code}: ${result.modifiedCount} documents modified`);
-        }
-
-        // Update last update time
-        lastUpdateTime = new Date();
-
-        res.json({ 
-            message: 'Referral counts updated successfully',
-            timestamp: lastUpdateTime
-        });
-    } catch (error) {
-        console.error('Error updating referral counts:', error);
-        res.status(500).json({ 
-            message: 'Failed to update referral counts',
-            error: error.message 
-        });
+  try {
+    const { referralCounts } = req.body;
+    
+    if (!referralCounts || !Array.isArray(referralCounts)) {
+      return res.status(400).json({ message: 'Invalid referral counts data' });
     }
+
+    console.log('Received referral counts batch:', referralCounts);
+
+    // Process each referral count with a timeout
+    const results = await Promise.all(referralCounts.map(async ({ code, count }) => {
+      try {
+        const result = await User.updateOne(
+          { referralCode: code },
+          { $set: { referralCount: count } },
+          { maxTimeMS: 5000 } // 5 second timeout
+        );
+        return { code, success: true, modified: result.modifiedCount };
+      } catch (error) {
+        console.error(`Error updating ${code}:`, error);
+        return { code, success: false, error: error.message };
+      }
+    }));
+
+    // Check for any failures
+    const failures = results.filter(r => !r.success);
+    if (failures.length > 0) {
+      console.error('Some updates failed:', failures);
+      return res.status(207).json({ 
+        message: 'Some updates failed',
+        results,
+        failures
+      });
+    }
+
+    // Update last update time
+    lastUpdateTime = new Date();
+
+    res.json({ 
+      message: 'Referral counts updated successfully',
+      timestamp: lastUpdateTime,
+      results
+    });
+  } catch (error) {
+    console.error('Error updating referral counts:', error);
+    res.status(500).json({ 
+      message: 'Failed to update referral counts',
+      error: error.message 
+    });
+  }
 });
 
 // Start server
