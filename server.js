@@ -64,27 +64,27 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 60000,
-  socketTimeoutMS: 90000,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
   family: 4,
   retryWrites: true,
   retryReads: true,
-  maxPoolSize: 100,
-  minPoolSize: 20,
-  connectTimeoutMS: 60000,
-  heartbeatFrequencyMS: 5000,
-  waitQueueTimeoutMS: 60000,
+  maxPoolSize: 50,
+  minPoolSize: 10,
+  connectTimeoutMS: 30000,
+  heartbeatFrequencyMS: 10000,
+  waitQueueTimeoutMS: 30000,
   keepAlive: true,
   keepAliveInitialDelay: 300000,
-  maxIdleTimeMS: 300000,
+  maxIdleTimeMS: 120000,
   autoIndex: true,
   autoCreate: true,
-  bufferCommands: false // Disable buffering
+  bufferCommands: false
 };
 
 let isConnected = false;
 
-// Add connection event handlers with more detailed logging
+// Add connection event handlers with better state tracking
 mongoose.connection.on('connected', () => {
   console.log('MongoDB connected successfully');
   console.log('Connection pool size:', mongoose.connection.client.s.options.maxPoolSize);
@@ -113,13 +113,6 @@ mongoose.connection.on('error', (err) => {
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
   isConnected = false;
-});
-
-// Add monitoring for slow operations
-mongoose.set('debug', {
-  color: true,
-  shell: true,
-  slowMs: 100 // Log operations that take longer than 100ms
 });
 
 // Function to check if MongoDB is connected
@@ -155,7 +148,7 @@ async function waitForConnection(timeout = 30000) {
 
 // Function to connect to MongoDB with improved retry logic
 async function connectWithRetry() {
-  let retries = 10;
+  let retries = 5;
   let delay = 1000;
 
   // Disconnect if there's an existing connection
@@ -225,6 +218,13 @@ connectWithRetry().catch(err => {
   if (process.env.NODE_ENV !== 'production') {
     process.exit(1);
   }
+});
+
+// Add monitoring for slow operations
+mongoose.set('debug', {
+  color: true,
+  shell: true,
+  slowMs: 100 // Log operations that take longer than 100ms
 });
 
 // MongoDB Models
