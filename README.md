@@ -1,6 +1,6 @@
 # STME CSC Ambassadors Program
 
-A web application for managing the CS & Tech Club's Ambassador Program with email verification (OTP) functionality and Google Sheets integration for referral tracking.
+A web application for managing the CSC Club's Ambassador Program with email verification (OTP) functionality and Google Sheets integration for referral tracking.
 
 ## Features
 
@@ -13,7 +13,7 @@ A web application for managing the CS & Tech Club's Ambassador Program with emai
 - Real-time ambassador rankings
 - Marketing materials for ambassadors
 
-## Tech Stack
+## CS Stack
 
 - **Frontend:** HTML, CSS, JavaScript (Native)
 - **Backend:** Node.js, Express.js
@@ -35,7 +35,7 @@ A web application for managing the CS & Tech Club's Ambassador Program with emai
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd cs-tech-ambassadors
+cd CSC-ambassadors
 ```
 
 2. Install dependencies:
@@ -52,7 +52,7 @@ npm install
    JWT_SECRET=your-secret-key-here
 
    # MongoDB Configuration
-   MONGODB_URI=mongodb://localhost:27017/cs-tech-ambassadors
+   MONGODB_URI=your-database-configuration
 
    # Email Configuration (Gmail)
    EMAIL_USER=your-gmail-address
@@ -140,7 +140,7 @@ curl -X POST http://localhost:3000/api/debug/test-form
 ## Project Structure
 
 ```
-cs-tech-ambassadors/
+csc-ambassadors/
 ├── public/              # Static files
 │   ├── images/         # Image assets
 │   ├── styles.css      # Global styles

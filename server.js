@@ -64,30 +64,35 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000, // Increased from 5000
-  socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 60000, // Increased from 30000
+  socketTimeoutMS: 90000, // Increased from 45000
   family: 4,
   retryWrites: true,
   retryReads: true,
-  maxPoolSize: 50,
-  minPoolSize: 10,
-  connectTimeoutMS: 30000, // Increased from 10000
-  heartbeatFrequencyMS: 10000,
-  waitQueueTimeoutMS: 30000,
+  maxPoolSize: 100, // Increased from 50
+  minPoolSize: 20, // Increased from 10
+  connectTimeoutMS: 60000, // Increased from 30000
+  heartbeatFrequencyMS: 5000, // Decreased for more frequent checks
+  waitQueueTimeoutMS: 60000, // Increased from 30000
   keepAlive: true,
   keepAliveInitialDelay: 300000,
-  maxIdleTimeMS: 120000,
+  maxIdleTimeMS: 300000, // Increased from 120000
   autoIndex: true,
-  autoCreate: true
+  autoCreate: true,
+  bufferCommands: true, // Explicitly enable command buffering
+  bufferTimeoutMS: 30000 // Set buffer timeout to 30 seconds
 };
 
-// Add connection event handlers
+// Add connection event handlers with more detailed logging
 mongoose.connection.on('connected', () => {
   console.log('MongoDB connected successfully');
+  console.log('Connection pool size:', mongoose.connection.client.s.options.maxPoolSize);
 });
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
+  console.error('Full error details:', JSON.stringify(err, null, 2));
+  
   if (err.name === 'MongooseServerSelectionError') {
     console.error('\nIMPORTANT: MongoDB Atlas IP Whitelist Issue');
     console.error('Please add the following IP ranges to your MongoDB Atlas whitelist:');
@@ -102,23 +107,43 @@ mongoose.connection.on('error', (err) => {
   }
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected');
+// Add monitoring for slow operations
+mongoose.set('debug', {
+  color: true,
+  shell: true,
+  slowMs: 100 // Log operations that take longer than 100ms
 });
 
-// Function to connect to MongoDB with retry
+// Function to connect to MongoDB with improved retry logic
 async function connectWithRetry() {
-  let retries = 5;
-  let delay = 1000; // Start with 1 second delay
+  let retries = 10; // Increased from 5
+  let delay = 1000;
 
   while (retries > 0) {
     try {
       console.log(`Attempting to connect to MongoDB (${retries} retries left)...`);
       await mongoose.connect(MONGODB_URI, mongooseOptions);
       console.log('Successfully connected to MongoDB');
+      
+      // Set up keepalive on the connection
+      mongoose.connection.db.admin().ping(function(err, result) {
+        if (err || !result) {
+          console.error('MongoDB ping failed:', err || 'No result');
+        } else {
+          console.log('MongoDB ping successful');
+        }
+      });
+      
       return;
     } catch (err) {
       console.error(`MongoDB connection error (${retries} retries left):`, err);
+      console.error('Error details:', {
+        name: err.name,
+        message: err.message,
+        code: err.code,
+        stack: err.stack
+      });
+      
       retries--;
       
       if (retries === 0) {
@@ -129,8 +154,7 @@ async function connectWithRetry() {
         return;
       }
 
-      // Exponential backoff: wait longer between each retry
-      delay *= 2;
+      delay *= 2; // Exponential backoff
       console.log(`Waiting ${delay}ms before retrying...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }

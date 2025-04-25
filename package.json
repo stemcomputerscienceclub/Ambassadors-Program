@@ -1,7 +1,7 @@
 {
-  "name": "cs-tech-ambassadors",
+  "name": "csc-ambassadors",
   "version": "1.0.0",
-  "description": "CS & Tech Ambassadors Program",
+  "description": "CSC Ambassadors Program",
   "main": "server.js",
   "type": "module",
   "scripts": {
