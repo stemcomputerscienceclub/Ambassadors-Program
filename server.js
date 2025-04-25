@@ -128,21 +128,26 @@ function isMongoDBConnected() {
 }
 
 // Function to wait for MongoDB connection
-async function waitForConnection(timeout = 5000) {
+async function waitForConnection(timeout = 30000) {
   if (isMongoDBConnected()) return true;
 
   return new Promise((resolve) => {
-    const checkInterval = 100;
+    const checkInterval = 500;
     let elapsed = 0;
+    console.log('Waiting for MongoDB connection...');
 
     const timer = setInterval(() => {
       elapsed += checkInterval;
       if (isMongoDBConnected()) {
         clearInterval(timer);
+        console.log('MongoDB connection established');
         resolve(true);
       } else if (elapsed >= timeout) {
         clearInterval(timer);
+        console.log(`MongoDB connection wait timeout exceeded after ${timeout}ms`);
         resolve(false);
+      } else if (elapsed % 5000 === 0) {
+        console.log(`Still waiting for MongoDB connection... (${elapsed}ms elapsed)`);
       }
     }, checkInterval);
   });
@@ -153,22 +158,40 @@ async function connectWithRetry() {
   let retries = 10;
   let delay = 1000;
 
+  // Disconnect if there's an existing connection
+  if (mongoose.connection.readyState !== 0) {
+    console.log('Closing existing MongoDB connection...');
+    await mongoose.connection.close();
+  }
+
   while (retries > 0) {
     try {
       console.log(`Attempting to connect to MongoDB (${retries} retries left)...`);
       await mongoose.connect(MONGODB_URI, mongooseOptions);
       console.log('Successfully connected to MongoDB');
       
-      // Set up keepalive on the connection
-      mongoose.connection.db.admin().ping(function(err, result) {
-        if (err || !result) {
-          console.error('MongoDB ping failed:', err || 'No result');
-        } else {
-          console.log('MongoDB ping successful');
-        }
-      });
-      
-      return;
+      // Verify connection with ping
+      const pingResult = await mongoose.connection.db.admin().ping();
+      if (pingResult) {
+        console.log('MongoDB ping successful');
+        isConnected = true;
+        
+        // Set up connection monitoring
+        setInterval(async () => {
+          try {
+            await mongoose.connection.db.admin().ping();
+          } catch (err) {
+            console.error('MongoDB ping failed:', err);
+            isConnected = false;
+            // Trigger reconnection
+            connectWithRetry().catch(console.error);
+          }
+        }, 30000); // Check every 30 seconds
+        
+        return;
+      } else {
+        throw new Error('MongoDB ping failed');
+      }
     } catch (err) {
       console.error(`MongoDB connection error (${retries} retries left):`, err);
       console.error('Error details:', {
@@ -182,6 +205,7 @@ async function connectWithRetry() {
       
       if (retries === 0) {
         console.error('Failed to connect to MongoDB after all retries');
+        isConnected = false;
         if (process.env.NODE_ENV !== 'production') {
           process.exit(1);
         }
@@ -341,16 +365,28 @@ async function generateNextReferralCode() {
 // Register new user with better error handling
 app.post('/api/register', async (req, res) => {
   try {
-    // Check MongoDB connection first
+    // Check MongoDB connection first with longer timeout
     if (!isMongoDBConnected()) {
-      const connected = await waitForConnection();
+      console.log('MongoDB not connected, waiting for connection...');
+      const connected = await waitForConnection(30000); // 30 second timeout
       if (!connected) {
-        console.error('MongoDB not connected and connection wait timeout exceeded');
+        console.error('MongoDB connection wait timeout exceeded');
         return res.status(503).json({ 
           message: 'Database connection unavailable. Please try again in a few moments.',
-          retryAfter: 5
+          retryAfter: 10
         });
       }
+    }
+
+    // Verify connection is still active
+    try {
+      await mongoose.connection.db.admin().ping();
+    } catch (err) {
+      console.error('MongoDB ping failed before operation:', err);
+      return res.status(503).json({ 
+        message: 'Database connection unstable. Please try again in a few moments.',
+        retryAfter: 10
+      });
     }
 
     const { name, email, phone, password } = req.body;
