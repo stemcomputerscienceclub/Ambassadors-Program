@@ -16,7 +16,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? ['https://your-vercel-domain.vercel.app'] // Replace with your Vercel domain
     : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -73,7 +73,7 @@ mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
   console.error('Full error details:', JSON.stringify(err, null, 2));
   isConnected = false;
-  
+
   if (err.name === 'MongooseServerSelectionError') {
     console.error('\nIMPORTANT: MongoDB Atlas IP Whitelist Issue');
     console.error('Please add the following IP ranges to your MongoDB Atlas whitelist:');
@@ -158,13 +158,13 @@ async function connectWithRetry() {
       console.log(`Attempting to connect to MongoDB (${retries} retries left)...`);
       await mongoose.connect(MONGODB_URI, mongooseOptions);
       console.log('Successfully connected to MongoDB');
-      
+
       // Verify connection with ping
       const pingResult = await mongoose.connection.db.admin().ping();
       if (pingResult) {
         console.log('MongoDB ping successful');
         isConnected = true;
-        
+
         // Set up connection monitoring
         setInterval(async () => {
           try {
@@ -176,7 +176,7 @@ async function connectWithRetry() {
             connectWithRetry().catch(console.error);
           }
         }, 30000); // Check every 30 seconds
-        
+
         return;
       } else {
         throw new Error('MongoDB ping failed');
@@ -189,9 +189,9 @@ async function connectWithRetry() {
         code: err.code,
         stack: err.stack
       });
-      
+
       retries--;
-      
+
       if (retries === 0) {
         console.error('Failed to connect to MongoDB after all retries');
         isConnected = false;
@@ -290,7 +290,7 @@ let isProcessingQueue = false;
 
 async function processEmailQueue() {
   if (isProcessingQueue || emailQueue.length === 0) return;
-  
+
   isProcessingQueue = true;
   try {
     while (emailQueue.length > 0) {
@@ -338,7 +338,7 @@ transporter.verify((error, success) => {
 
 // Generate OTP
 function generateOTP() {
-    return Math.floor(10000 + Math.random() * 90000).toString(); // 5-digit OTP
+  return Math.floor(10000 + Math.random() * 90000).toString(); // 5-digit OTP
 }
 
 // Generate verification token
@@ -348,27 +348,27 @@ function generateVerificationToken() {
 
 // Function to generate the next referral code
 async function generateNextReferralCode() {
-    try {
-        // Find the highest existing referral code number
-        const lastUser = await User.findOne({ referralCode: { $regex: /^STEM-CSC-\d{3}$/ } })
-            .sort({ referralCode: -1 });
-        
-        let nextNumber = 1;
-        
-        if (lastUser && lastUser.referralCode) {
-            const lastNumber = parseInt(lastUser.referralCode.split('-')[2]);
-            if (!isNaN(lastNumber)) {
-                nextNumber = lastNumber + 1;
-            }
-        }
-        
-        // Format the number with leading zeros
-        const formattedNumber = nextNumber.toString().padStart(3, '0');
-        return `STEM-CSC-${formattedNumber}`;
-    } catch (error) {
-        console.error('Error generating referral code:', error);
-        throw error;
+  try {
+    // Find the highest existing referral code number
+    const lastUser = await User.findOne({ referralCode: { $regex: /^STEM-CSC-\d{3}$/ } })
+      .sort({ referralCode: -1 });
+
+    let nextNumber = 1;
+
+    if (lastUser && lastUser.referralCode) {
+      const lastNumber = parseInt(lastUser.referralCode.split('-')[2]);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
     }
+
+    // Format the number with leading zeros
+    const formattedNumber = nextNumber.toString().padStart(3, '0');
+    return `STEM-CSC-${formattedNumber}`;
+  } catch (error) {
+    console.error('Error generating referral code:', error);
+    throw error;
+  }
 }
 
 // Register new user with better error handling
@@ -380,7 +380,7 @@ app.post('/api/register', async (req, res) => {
       const connected = await waitForMongoDB(30000); // 30 second timeout
       if (!connected) {
         console.error('MongoDB connection wait timeout exceeded');
-        return res.status(503).json({ 
+        return res.status(503).json({
           message: 'Database connection unavailable. Please try again in a few moments.',
           retryAfter: 10
         });
@@ -392,7 +392,7 @@ app.post('/api/register', async (req, res) => {
       await mongoose.connection.db.admin().ping();
     } catch (err) {
       console.error('MongoDB ping failed before operation:', err);
-      return res.status(503).json({ 
+      return res.status(503).json({
         message: 'Database connection unstable. Please try again in a few moments.',
         retryAfter: 10
       });
@@ -421,7 +421,7 @@ app.post('/api/register', async (req, res) => {
       existingUser = await User.findOne({ email }).lean().maxTimeMS(5000).exec();
     } catch (err) {
       console.error('Error checking for existing user:', err);
-      return res.status(503).json({ 
+      return res.status(503).json({
         message: 'Service temporarily unavailable. Please try again in a few moments.',
         retryAfter: 5
       });
@@ -456,7 +456,7 @@ app.post('/api/register', async (req, res) => {
       await user.save({ maxTimeMS: 5000 });
     } catch (err) {
       console.error('Error saving new user:', err);
-      return res.status(503).json({ 
+      return res.status(503).json({
         message: 'Failed to create user. Please try again.',
         retryAfter: 5
       });
@@ -464,10 +464,10 @@ app.post('/api/register', async (req, res) => {
 
     // Send verification email
     const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: user.email,
-        subject: 'Verify your email for STEM CSC Ambassadors Program',
-        html: `
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'Verify your email for STEM CSC Ambassadors Program',
+      html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h1 style="color: #4a90e2;">Welcome to STEM CSC Ambassadors Program!</h1>
                 <p>Hello ${user.name},</p>
@@ -502,7 +502,7 @@ app.post('/api/register', async (req, res) => {
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       await User.deleteOne({ email });
-      
+
       if (emailError.code === 'EENVELOPE') {
         return res.status(400).json({ message: 'Invalid email address. Please check your email and try again.' });
       } else if (emailError.code === 'EAUTH') {
@@ -521,135 +521,135 @@ app.post('/api/register', async (req, res) => {
 
 // Verify email with token and OTP
 app.post('/api/verify', async (req, res) => {
-    try {
-        const { code, token } = req.body;
-        console.log('Received verification request:', { code, token }); // Debug log
+  try {
+    const { code, token } = req.body;
+    console.log('Received verification request:', { code, token }); // Debug log
 
-        if (!token) {
-            console.error('Verification failed: No token provided');
-            return res.status(400).json({ message: 'Verification token is required' });
-        }
-
-        // Check MongoDB connection first
-        if (!isMongoDBReady()) {
-            console.log('MongoDB not connected, waiting for connection...');
-            const connected = await waitForMongoDB(30000);
-            if (!connected) {
-                console.error('MongoDB connection wait timeout exceeded');
-                return res.status(503).json({ 
-                    message: 'Database connection unavailable. Please try again in a few moments.',
-                    retryAfter: 10
-                });
-            }
-        }
-
-        // Find user with matching token with retry logic
-        let user;
-        let retries = 3;
-        while (retries > 0) {
-            try {
-                user = await User.findOne({ verificationToken: token }).maxTimeMS(5000);
-                if (user) break;
-                
-                retries--;
-                if (retries > 0) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-            } catch (err) {
-                console.error(`Error finding user (${retries} retries left):`, err);
-                retries--;
-                if (retries === 0) throw err;
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-
-        if (!user) {
-            console.error('Verification failed: Invalid token', token);
-            return res.status(400).json({ message: 'Invalid or expired verification token' });
-        }
-
-        console.log('Found user:', { email: user.email, verified: user.verified }); // Debug log
-
-        // Verify OTP
-        if (user.otp !== code) {
-            console.error('Verification failed: Invalid OTP for user', user.email);
-            return res.status(400).json({ message: 'Invalid verification code' });
-        }
-        
-        if (user.otpExpiresAt < new Date()) {
-            console.error('Verification failed: Expired OTP for user', user.email);
-            return res.status(400).json({ message: 'Verification code has expired' });
-        }
-
-        // Generate unique referral code with retry
-        let referralCode;
-        retries = 3;
-        while (retries > 0) {
-            try {
-                referralCode = await generateNextReferralCode();
-                break;
-            } catch (err) {
-                console.error(`Error generating referral code (${retries} retries left):`, err);
-                retries--;
-                if (retries === 0) throw err;
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-
-        console.log('Generated referral code:', referralCode); // Debug log
-
-        // Update user with retry logic
-        retries = 3;
-        while (retries > 0) {
-            try {
-                user.verified = true;
-                user.referralCode = referralCode;
-                user.verificationToken = undefined;
-                user.otp = undefined;
-                user.otpExpiresAt = undefined;
-                await user.save({ maxTimeMS: 5000 });
-                console.log('User verified successfully:', user.email);
-                break;
-            } catch (err) {
-                console.error(`Error saving user (${retries} retries left):`, err);
-                retries--;
-                if (retries === 0) throw err;
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-
-        // Generate JWT token
-        const authToken = jwt.sign(
-            { email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.json({
-            message: 'Email verified successfully',
-            token: authToken,
-            referralCode: referralCode
-        });
-    } catch (error) {
-        console.error('Verification error:', error);
-        console.error('Full error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-        });
-        
-        if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
-            res.status(503).json({ 
-                message: 'Database connection timed out. Please try again in a few moments.',
-                retryAfter: 10
-            });
-        } else {
-            res.status(500).json({ 
-                message: 'An error occurred during verification. Please try again later.',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
-        }
+    if (!token) {
+      console.error('Verification failed: No token provided');
+      return res.status(400).json({ message: 'Verification token is required' });
     }
+
+    // Check MongoDB connection first
+    if (!isMongoDBReady()) {
+      console.log('MongoDB not connected, waiting for connection...');
+      const connected = await waitForMongoDB(30000);
+      if (!connected) {
+        console.error('MongoDB connection wait timeout exceeded');
+        return res.status(503).json({
+          message: 'Database connection unavailable. Please try again in a few moments.',
+          retryAfter: 10
+        });
+      }
+    }
+
+    // Find user with matching token with retry logic
+    let user;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        user = await User.findOne({ verificationToken: token }).maxTimeMS(5000);
+        if (user) break;
+
+        retries--;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (err) {
+        console.error(`Error finding user (${retries} retries left):`, err);
+        retries--;
+        if (retries === 0) throw err;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (!user) {
+      console.error('Verification failed: Invalid token', token);
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    console.log('Found user:', { email: user.email, verified: user.verified }); // Debug log
+
+    // Verify OTP
+    if (user.otp !== code) {
+      console.error('Verification failed: Invalid OTP for user', user.email);
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (user.otpExpiresAt < new Date()) {
+      console.error('Verification failed: Expired OTP for user', user.email);
+      return res.status(400).json({ message: 'Verification code has expired' });
+    }
+
+    // Generate unique referral code with retry
+    let referralCode;
+    retries = 3;
+    while (retries > 0) {
+      try {
+        referralCode = await generateNextReferralCode();
+        break;
+      } catch (err) {
+        console.error(`Error generating referral code (${retries} retries left):`, err);
+        retries--;
+        if (retries === 0) throw err;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    console.log('Generated referral code:', referralCode); // Debug log
+
+    // Update user with retry logic
+    retries = 3;
+    while (retries > 0) {
+      try {
+        user.verified = true;
+        user.referralCode = referralCode;
+        user.verificationToken = undefined;
+        user.otp = undefined;
+        user.otpExpiresAt = undefined;
+        await user.save({ maxTimeMS: 5000 });
+        console.log('User verified successfully:', user.email);
+        break;
+      } catch (err) {
+        console.error(`Error saving user (${retries} retries left):`, err);
+        retries--;
+        if (retries === 0) throw err;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    // Generate JWT token
+    const authToken = jwt.sign(
+      { email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Email verified successfully',
+      token: authToken,
+      referralCode: referralCode
+    });
+  } catch (error) {
+    console.error('Verification error:', error);
+    console.error('Full error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+
+    if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+      res.status(503).json({
+        message: 'Database connection timed out. Please try again in a few moments.',
+        retryAfter: 10
+      });
+    } else {
+      res.status(500).json({
+        message: 'An error occurred during verification. Please try again later.',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
 });
 
 // Login
@@ -696,7 +696,7 @@ app.post('/api/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     if (error.message === 'MongoDB connection and initialization timeout') {
-      res.status(503).json({ 
+      res.status(503).json({
         message: 'Database connection unavailable. Please try again in a few moments.',
         retryAfter: 10
       });
@@ -821,95 +821,7 @@ app.get('/api/materials', authenticateToken, async (req, res) => {
   }
 });
 
-// Function to update referral counts from Google Forms
-
-
-// Update counts every hour
-setInterval(updateReferralCounts, 3600000);
-
-// Initial update
-updateReferralCounts();
-
-// Track referrals from Google Forms
-app.post('/api/track-referral', async (req, res) => {
-    try {
-        const { email, referralCode } = req.body;
-
-        // Validate input
-        if (!email || !referralCode) {
-            return res.status(400).json({ message: 'Email and referral code are required' });
-        }
-
-        // Find the ambassador who referred this user
-        const ambassador = await User.findOne({ referralCode });
-        if (!ambassador) {
-            return res.status(404).json({ message: 'Invalid referral code' });
-        }
-
-        // Check if this email has already been referred
-        const existingReferral = await Referral.findOne({ email });
-        if (existingReferral) {
-            return res.status(400).json({ message: 'This email has already been referred' });
-        }
-
-        // Create new referral record
-        const referral = new Referral({
-            email,
-            ambassadorId: ambassador._id,
-            referralCode,
-            timestamp: new Date()
-        });
-
-        await referral.save();
-
-        // Update ambassador's referral count
-        ambassador.referralCount = (ambassador.referralCount || 0) + 1;
-        await ambassador.save();
-
-        res.status(201).json({ message: 'Referral tracked successfully' });
-    } catch (error) {
-        console.error('Error tracking referral:', error);
-        res.status(500).json({ message: 'Error tracking referral' });
-    }
-});
-
-// Get referral statistics
-app.get('/api/referral-stats', async (req, res) => {
-    try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ message: 'No token provided' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const ambassador = await User.findById(decoded.userId);
-
-        if (!ambassador) {
-            return res.status(404).json({ message: 'Ambassador not found' });
-        }
-
-        // Get all referrals for this ambassador
-        const referrals = await Referral.find({ ambassadorId: ambassador._id })
-            .sort({ timestamp: -1 });
-
-        // Get total number of ambassadors and current rank
-        const totalAmbassadors = await User.countDocuments();
-        const ambassadors = await User.find().sort({ referralCount: -1 });
-        const rank = ambassadors.findIndex(a => a._id.toString() === ambassador._id.toString()) + 1;
-
-        res.json({
-            referralCount: ambassador.referralCount || 0,
-            referrals,
-            rank,
-            totalAmbassadors
-        });
-    } catch (error) {
-        console.error('Error getting referral stats:', error);
-        res.status(500).json({ message: 'Error getting referral stats' });
-    }
-});
-
-// Update the referral counts endpoint with better error handling
+// Endpoint to receive referral counts from external source
 app.post('/api/update-referral-counts', async (req, res) => {
   console.log('Received request to update referral counts');
   console.log('Request body:', req.body);
@@ -924,43 +836,33 @@ app.post('/api/update-referral-counts', async (req, res) => {
 
     console.log('Processing referral counts batch:', referralCounts);
 
-    // Process each referral count with a timeout and retry
+    // Process each referral count with connection check and retry
     const results = await Promise.all(referralCounts.map(async ({ code, count }) => {
       console.log(`Processing referral code ${code} with count ${count}`);
       let retries = 3;
-      let lastError = null;
-
+      
       while (retries > 0) {
         try {
+          await ensureMongoDBReady();
           const startTime = Date.now();
           const result = await User.updateOne(
             { referralCode: code },
             { $set: { referralCount: count } },
-            { maxTimeMS: 30000 } // Increased timeout
+            { maxTimeMS: 5000 }
           );
           const endTime = Date.now();
           console.log(`Update for ${code} completed in ${endTime - startTime}ms`);
           console.log(`Update result for ${code}:`, result);
           return { code, success: true, modified: result.modifiedCount };
-        } catch (error) {
-          console.error(`Error updating ${code} (${retries} retries left):`, error);
-          lastError = error;
+        } catch (err) {
+          console.error(`Error updating ${code} (${retries} retries left):`, err);
           retries--;
-          
-          if (retries > 0) {
-            const delay = Math.pow(2, 3 - retries) * 1000; // Exponential backoff
-            console.log(`Waiting ${delay}ms before retrying...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+          if (retries === 0) {
+            return { code, success: false, error: err.message };
           }
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
-
-      return { 
-        code, 
-        success: false, 
-        error: lastError?.message || 'Unknown error',
-        stack: lastError?.stack
-      };
     }));
 
     // Check for any failures
@@ -991,6 +893,48 @@ app.post('/api/update-referral-counts', async (req, res) => {
       error: error.message 
     });
   }
+});
+
+// Track referrals endpoint
+app.post('/api/track-referral', async (req, res) => {
+    try {
+        const { email, referralCode } = req.body;
+
+        // Validate input
+        if (!email || !referralCode) {
+            return res.status(400).json({ message: 'Email and referral code are required' });
+        }
+
+        await ensureMongoDBReady();
+
+        // Find the ambassador who referred this user
+        const ambassador = await User.findOne({ referralCode });
+        if (!ambassador) {
+            return res.status(404).json({ message: 'Invalid referral code' });
+        }
+
+        // Check if this email has already been referred
+        const existingReferral = await User.findOne({ email });
+        if (existingReferral) {
+            return res.status(400).json({ message: 'This email has already been referred' });
+        }
+
+        // Update ambassador's referral count
+        ambassador.referralCount = (ambassador.referralCount || 0) + 1;
+        await ambassador.save();
+
+        res.status(201).json({ message: 'Referral tracked successfully' });
+    } catch (error) {
+        console.error('Error tracking referral:', error);
+        if (error.message === 'MongoDB connection and initialization timeout') {
+            res.status(503).json({ 
+                message: 'Database connection unavailable. Please try again in a few moments.',
+                retryAfter: 10
+            });
+        } else {
+            res.status(500).json({ message: 'Error tracking referral' });
+        }
+    }
 });
 
 // Start server
