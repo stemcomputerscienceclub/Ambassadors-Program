@@ -937,6 +937,97 @@ app.post('/api/track-referral', async (req, res) => {
     }
 });
 
+// Resend OTP endpoint
+app.post('/api/resend-otp', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Verification token is required' });
+    }
+
+    // Check MongoDB connection
+    if (!isMongoDBReady()) {
+      const connected = await waitForMongoDB(30000);
+      if (!connected) {
+        return res.status(503).json({
+          message: 'Database connection unavailable. Please try again in a few moments.',
+          retryAfter: 10
+        });
+      }
+    }
+
+    // Find user with matching token
+    let user;
+    try {
+      user = await User.findOne({ verificationToken: token }).maxTimeMS(5000);
+    } catch (err) {
+      console.error('Error finding user:', err);
+      return res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again in a few moments.',
+        retryAfter: 5
+      });
+    }
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    // Generate new OTP and update expiration
+    const newOtp = generateOTP();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Update user with new OTP
+    user.otp = newOtp;
+    user.otpExpiresAt = expiresAt;
+    await user.save();
+
+    // Send new verification email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'New Verification Code - STEM CSC Ambassadors Program',
+      html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #4a90e2;">New Verification Code</h1>
+                <p>Hello ${user.name},</p>
+                <p>Your new verification code is:</p>
+                
+                <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 10px;">
+                    <h2 style="color: #4a90e2; font-size: 2.5rem; letter-spacing: 5px; margin: 0;">${newOtp}</h2>
+                    <p style="color: #666; margin-top: 10px;">This code will expire in 15 minutes</p>
+                </div>
+
+                <p>Click the button below to verify your email address:</p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="https://ambassador.stemcsclub.org/verify.html?token=${user.verificationToken}" 
+                       style="background-color: #4a90e2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                        Verify Email Address
+                    </a>
+                </div>
+                <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
+                <p style="word-break: break-all;">https://ambassador.stemcsclub.org/verify.html?token=${user.verificationToken}</p>
+                <p>Best regards,<br>STEM CSC Management Board</p>
+            </div>
+        `
+    };
+
+    try {
+      await sendEmail(mailOptions);
+      res.status(200).json({
+        message: 'New verification code sent successfully. Please check your email.',
+        verificationToken: user.verificationToken
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      return res.status(500).json({ message: 'Failed to send new verification code. Please try again later.' });
+    }
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

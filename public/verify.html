@@ -228,6 +228,27 @@
         let resendTimer = 60;
         let canResend = false;
 
+        // Start initial countdown
+        const startCountdown = () => {
+            canResend = false;
+            resendTimer = 60;
+            updateResendLink();
+            
+            const timerInterval = setInterval(() => {
+                resendTimer--;
+                updateResendLink();
+                
+                if (resendTimer <= 0) {
+                    clearInterval(timerInterval);
+                    canResend = true;
+                    updateResendLink();
+                }
+            }, 1000);
+        };
+
+        // Start countdown when page loads
+        startCountdown();
+
         // Handle pasting and auto-focus
         inputs.forEach((input, index) => {
             // Handle pasting
@@ -278,7 +299,7 @@
             console.log('Submitting verification with token:', window.verificationToken); // Debug log
             
             try {
-                const response = await fetch('https://ambassador.stemcsclub.org/api/verify', {
+                const response = await fetch('/api/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -307,17 +328,9 @@
             }
         });
 
-        // Handle resend code
+        // Handle resend OTP
         resendLink.addEventListener('click', async (e) => {
             e.preventDefault();
-            
-            if (!window.verificationToken) {
-                showToast('Invalid verification link', 'error');
-                setTimeout(() => {
-                    window.location.href = 'https://ambassador.stemcsclub.org/signup.html';
-                }, 2000);
-                return;
-            }
             
             if (!canResend) {
                 showToast(`Please wait ${resendTimer} seconds before requesting a new code`, 'info');
@@ -325,7 +338,7 @@
             }
 
             try {
-                const response = await fetch('https://ambassador.stemcsclub.org/api/resend-verification', {
+                const response = await fetch('/api/resend-otp', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -338,41 +351,32 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showToast('New verification code sent!', 'success');
-                    startResendTimer();
+                    showToast('New verification code sent successfully!', 'success');
+                    startCountdown(); // Start new countdown after successful resend
                 } else {
-                    throw new Error(data.message || 'Failed to resend code');
+                    showToast(data.message || 'Failed to send new code', 'error');
                 }
             } catch (error) {
-                showToast(error.message, 'error');
+                console.error('Resend OTP error:', error);
+                showToast('Failed to send new code. Please try again later.', 'error');
             }
         });
 
-        // Resend timer
-        function startResendTimer() {
-            canResend = false;
-            resendTimer = 60;
-            
-            const timerInterval = setInterval(() => {
-                resendTimer--;
-                resendLink.innerHTML = `
-                    <i class="fas fa-redo"></i>
-                    Resend Code (${resendTimer}s)
-                `;
-
-                if (resendTimer <= 0) {
-                    clearInterval(timerInterval);
-                    canResend = true;
-                    resendLink.innerHTML = `
-                        <i class="fas fa-redo"></i>
-                        Resend Verification Code
-                    `;
-                }
-            }, 1000);
+        // Update resend link text
+        function updateResendLink() {
+            if (canResend) {
+                resendLink.innerHTML = '<i class="fas fa-redo"></i> Resend Verification Code';
+                resendLink.style.opacity = '1';
+                resendLink.style.cursor = 'pointer';
+            } else {
+                resendLink.innerHTML = `<i class="fas fa-clock"></i> Resend in ${resendTimer}s`;
+                resendLink.style.opacity = '0.5';
+                resendLink.style.cursor = 'not-allowed';
+            }
         }
 
-        // Start the resend timer when page loads
-        startResendTimer();
+        // Initialize resend link
+        updateResendLink();
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
