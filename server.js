@@ -510,7 +510,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Verify email with token
+// Verify email with token and OTP
 app.post('/api/verify', async (req, res) => {
     try {
         const { code, token } = req.body;
@@ -521,14 +521,45 @@ app.post('/api/verify', async (req, res) => {
             return res.status(400).json({ message: 'Verification token is required' });
         }
 
-        // Find user with matching token
-        const user = await User.findOne({ verificationToken: token });
-        console.log('Found user:', user ? { email: user.email, verified: user.verified } : 'Not found'); // Debug log
-        
+        // Check MongoDB connection first
+        if (!isMongoDBConnected()) {
+            console.log('MongoDB not connected, waiting for connection...');
+            const connected = await waitForConnection(30000);
+            if (!connected) {
+                console.error('MongoDB connection wait timeout exceeded');
+                return res.status(503).json({ 
+                    message: 'Database connection unavailable. Please try again in a few moments.',
+                    retryAfter: 10
+                });
+            }
+        }
+
+        // Find user with matching token with retry logic
+        let user;
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                user = await User.findOne({ verificationToken: token }).maxTimeMS(5000);
+                if (user) break;
+                
+                retries--;
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } catch (err) {
+                console.error(`Error finding user (${retries} retries left):`, err);
+                retries--;
+                if (retries === 0) throw err;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
         if (!user) {
             console.error('Verification failed: Invalid token', token);
             return res.status(400).json({ message: 'Invalid or expired verification token' });
         }
+
+        console.log('Found user:', { email: user.email, verified: user.verified }); // Debug log
 
         // Verify OTP
         if (user.otp !== code) {
@@ -541,23 +572,41 @@ app.post('/api/verify', async (req, res) => {
             return res.status(400).json({ message: 'Verification code has expired' });
         }
 
-        // Generate final referral code
-        const referralCode = await generateNextReferralCode();
+        // Generate unique referral code with retry
+        let referralCode;
+        retries = 3;
+        while (retries > 0) {
+            try {
+                referralCode = await generateNextReferralCode();
+                break;
+            } catch (err) {
+                console.error(`Error generating referral code (${retries} retries left):`, err);
+                retries--;
+                if (retries === 0) throw err;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
         console.log('Generated referral code:', referralCode); // Debug log
 
-        // Update user
-        user.verified = true;
-        user.referralCode = referralCode;
-        user.verificationToken = undefined;
-        user.otp = undefined;
-        user.otpExpiresAt = undefined;
-        
-        try {
-            await user.save();
-            console.log('User verified successfully:', user.email);
-        } catch (saveError) {
-            console.error('Error saving user after verification:', saveError);
-            return res.status(500).json({ message: 'Error completing verification. Please try again.' });
+        // Update user with retry logic
+        retries = 3;
+        while (retries > 0) {
+            try {
+                user.verified = true;
+                user.referralCode = referralCode;
+                user.verificationToken = undefined;
+                user.otp = undefined;
+                user.otpExpiresAt = undefined;
+                await user.save({ maxTimeMS: 5000 });
+                console.log('User verified successfully:', user.email);
+                break;
+            } catch (err) {
+                console.error(`Error saving user (${retries} retries left):`, err);
+                retries--;
+                if (retries === 0) throw err;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
 
         // Generate JWT token
@@ -569,11 +618,28 @@ app.post('/api/verify', async (req, res) => {
 
         res.json({
             message: 'Email verified successfully',
-            token: authToken
+            token: authToken,
+            referralCode: referralCode
         });
     } catch (error) {
         console.error('Verification error:', error);
-        res.status(500).json({ message: 'An error occurred during verification. Please try again later.' });
+        console.error('Full error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+            res.status(503).json({ 
+                message: 'Database connection timed out. Please try again in a few moments.',
+                retryAfter: 10
+            });
+        } else {
+            res.status(500).json({ 
+                message: 'An error occurred during verification. Please try again later.',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
     }
 });
 
