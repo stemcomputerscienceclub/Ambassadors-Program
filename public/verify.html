@@ -3,279 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
     <title>Verify Email | STEM October CS & Tech Club</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .verification-container {
-            max-width: 500px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .verification-box {
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
         }
 
         .verification-header {
-            text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 30px;
         }
 
-        .verification-header img {
+        .verification-icon {
             width: 80px;
-            height: auto;
-            margin-bottom: 1rem;
-        }
-
-        .verification-header h1 {
-            font-size: 1.8rem;
-            color: #fff;
-            margin-bottom: 0.5rem;
-        }
-
-        .verification-header p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #fff;
-            font-weight: 500;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #4a90e2;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .error-message {
-            color: #ff6b6b;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-            display: none;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #4a90e2;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            height: 80px;
+            background: var(--primary-color);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            margin: 0 auto 20px;
         }
 
-        .btn:hover {
-            background: #357abd;
-            transform: translateY(-2px);
+        .verification-icon i {
+            font-size: 2.5rem;
+            color: white;
         }
 
-        .btn:active {
-            transform: translateY(0);
+        .verification-title {
+            font-size: 1.8rem;
+            color: var(--text-color);
+            margin-bottom: 10px;
         }
 
-        .success-message {
+        .verification-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .verification-form {
+            margin-bottom: 30px;
+        }
+
+        .verification-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .verification-input input {
+            width: 50px;
+            height: 50px;
             text-align: center;
-            padding: 2rem;
-            background: rgba(74, 144, 226, 0.1);
-            border-radius: 15px;
-            margin-top: 2rem;
-            display: none;
-        }
-
-        .success-message h3 {
-            color: #4a90e2;
             font-size: 1.5rem;
-            margin-bottom: 1rem;
+            border: 2px solid #e1e1e1;
+            border-radius: var(--border-radius);
+            background: white;
+            transition: var(--transition);
         }
 
-        .success-message p {
-            color: #fff;
-            margin-bottom: 1rem;
+        .verification-input input:focus {
+            border-color: var(--primary-color);
+            outline: none;
         }
 
-        .referral-code-display {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #4a90e2;
+        .verification-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .countdown {
-            color: rgba(255, 255, 255, 0.7);
+        .resend-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .resend-link:hover {
+            opacity: 0.8;
+        }
+
+        .verification-footer {
+            margin-top: 30px;
+            color: #666;
             font-size: 0.9rem;
         }
 
-        @media (max-width: 768px) {
-            .verification-container {
-                margin: 1rem;
-                padding: 1.5rem;
+        .verification-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            .verification-box {
+                padding: 30px 20px;
             }
 
-            .verification-header h1 {
-                font-size: 1.5rem;
+            .verification-input input {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
             }
         }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="container">
-            <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo"></a>
-            <ul>
-                <li><a href="/">Home</a></li>
-            </ul>
-        </div>
-    </nav>
-    <main>
-        <div class="verification-container">
+    <canvas id="matrixCanvas"></canvas>
+    <div class="verification-container">
+        <div class="verification-box">
             <div class="verification-header">
-                <img src="./images/logo.png" alt="CS & Tech Club Logo">
-                <h1>Verify Your Email</h1>
-                <p>Enter the verification code sent to your email address</p>
+                <div class="verification-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h1 class="verification-title">Verify Your Email</h1>
+                <p class="verification-subtitle">Please enter the 5-digit verification code sent to your email</p>
             </div>
-            <form id="verifyForm" onsubmit="handleVerification(event)">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
-                    <div id="emailError" class="error-message"></div>
+
+            <form id="verificationForm" class="verification-form">
+                <div class="verification-input">
+                    <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" aria-label="First digit of verification code">
+                    <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1" aria-label="Second digit of verification code">
+                    <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2" aria-label="Third digit of verification code">
+                    <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3" aria-label="Fourth digit of verification code">
+                    <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4" aria-label="Fifth digit of verification code">
                 </div>
-                <div class="form-group">
-                    <label for="otp">Verification Code</label>
-                    <input type="text" id="otp" name="otp" required maxlength="6" placeholder="Enter 6-digit code">
-                    <div id="otpError" class="error-message"></div>
+
+                <div class="verification-actions">
+                    <button type="submit" class="btn auth-btn btn-primary btn-block">
+                        <span>Verify Email</span>
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <a href="#" class="resend-link" id="resendLink">
+                        <i class="fas fa-redo"></i>
+                        Resend Verification Code
+                    </a>
                 </div>
-                <button type="submit" class="btn">
-                    <i class="fas fa-check-circle"></i> Verify Email
-                </button>
             </form>
-            <div id="verificationSuccess" class="success-message">
-                <h3><i class="fas fa-check-circle"></i> Email Verified Successfully!</h3>
-                <p>Welcome to the CS & Tech Ambassadors Program!</p>
-                <div class="referral-code-display">
-                    Your Ambassador Code: <strong id="referralCode"></strong>
-                </div>
-                <button type="button" onclick="copyReferralCode()" class="btn">
-                    <i class="fas fa-copy"></i> Copy Code
-                </button>
-                <p class="countdown">You will be redirected to the dashboard in <span id="countdown">5</span> seconds...</p>
+
+            <div class="verification-footer">
+                <p>Didn't receive the code? Check your spam folder or <a href="./signup.html" id="changeEmail">change email address</a></p>
             </div>
         </div>
-    </main>
+    </div>
 
     <script>
-        // Show error message
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
-
-        // Clear error message
-        function clearError(elementId) {
-            const errorElement = document.getElementById(elementId);
-            errorElement.textContent = '';
-            errorElement.style.display = 'none';
-        }
-
-        // Copy referral code to clipboard
-        function copyReferralCode() {
-            const code = document.getElementById('referralCode').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const btn = document.querySelector('.btn');
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        // Check for token on page load
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (!token) {
+                showToast('Invalid verification link', 'error');
                 setTimeout(() => {
-                    btn.innerHTML = originalText;
+                    window.location.href = '/signup.html';
                 }, 2000);
-            });
+                return;
+            }
+
+            // Store token for API calls
+            window.verificationToken = token;
+            console.log('Verification token:', token); // Debug log
+        });
+
+        // Matrix background animation
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const fontSize = 16;
+        const columns = Math.floor(width / fontSize);
+        const drops = new Array(columns).fill(1);
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
         }
 
-        async function handleVerification(event) {
-            event.preventDefault();
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            drops.length = Math.floor(width / fontSize);
+            drops.fill(1);
+        });
+
+        setInterval(draw, 33);
+
+        // Verification form handling
+        const verificationForm = document.getElementById('verificationForm');
+        const inputs = verificationForm.querySelectorAll('input');
+        const resendLink = document.getElementById('resendLink');
+        let resendTimer = 60;
+        let canResend = false;
+
+        // Handle pasting and auto-focus
+        inputs.forEach((input, index) => {
+            // Handle pasting
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text');
+                const numbers = pastedData.replace(/\D/g, '').split('').slice(0, 5);
+                
+                numbers.forEach((num, i) => {
+                    if (inputs[i]) {
+                        inputs[i].value = num;
+                    }
+                });
+                
+                // Focus the last input
+                inputs[Math.min(numbers.length - 1, inputs.length - 1)].focus();
+            });
+
+            // Handle input
+            input.addEventListener('input', () => {
+                if (input.value.length === 1) {
+                    if (index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    } else {
+                        input.blur();
+                    }
+                }
+            });
+
+            // Handle backspace
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        // Handle form submission
+        verificationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            const email = document.getElementById('email').value;
-            const otp = document.getElementById('otp').value;
-            const verificationToken = new URLSearchParams(window.location.search).get('token');
+            if (!window.verificationToken) {
+                showToast('Invalid verification link', 'error');
+                return;
+            }
             
-            // Clear previous errors
-            clearError('emailError');
-            clearError('otpError');
+            const code = Array.from(inputs).map(input => input.value).join('');
+            console.log('Submitting verification with token:', window.verificationToken); // Debug log
             
             try {
-                const response = await fetch('/api/verify-otp', {
+                const response = await fetch('/api/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, otp, verificationToken })
+                    body: JSON.stringify({ 
+                        code,
+                        token: window.verificationToken 
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Verification response:', data); // Debug log
+
+                if (response.ok) {
+                    showToast('Email verified successfully!', 'success');
+                    localStorage.setItem('token', data.token);
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Verification failed');
+                }
+            } catch (error) {
+                console.error('Verification error:', error); // Debug log
+                showToast(error.message, 'error');
+            }
+        });
+
+        // Handle resend code
+        resendLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            if (!window.verificationToken) {
+                showToast('Invalid verification link', 'error');
+                setTimeout(() => {
+                    window.location.href = '/signup.html';
+                }, 2000);
+                return;
+            }
+            
+            if (!canResend) {
+                showToast(`Please wait ${resendTimer} seconds before requesting a new code`, 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/resend-verification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: window.verificationToken
+                    })
                 });
 
                 const data = await response.json();
 
-                if (!response.ok) {
-                    if (response.status === 400) {
-                        showError('otpError', data.message);
-                    } else {
-                        showError('otpError', 'Verification failed. Please try again.');
-                    }
-                    return;
+                if (response.ok) {
+                    showToast('New verification code sent!', 'success');
+                    startResendTimer();
+                } else {
+                    throw new Error(data.message || 'Failed to resend code');
                 }
-
-                // Show success message and referral code
-                document.getElementById('verifyForm').style.display = 'none';
-                document.getElementById('verificationSuccess').style.display = 'block';
-                document.getElementById('referralCode').textContent = data.referralCode;
-
-                // Store token in localStorage
-                localStorage.setItem('token', data.token);
-
-                // Start countdown
-                let count = 5;
-                const countdownElement = document.getElementById('countdown');
-                const countdownInterval = setInterval(() => {
-                    count--;
-                    countdownElement.textContent = count;
-                    if (count <= 0) {
-                        clearInterval(countdownInterval);
-                        window.location.href = '/dashboard.html';
-                    }
-                }, 1000);
-
             } catch (error) {
-                console.error('Error during verification:', error);
-                showError('otpError', 'An error occurred. Please try again.');
+                showToast(error.message, 'error');
             }
+        });
+
+        // Resend timer
+        function startResendTimer() {
+            canResend = false;
+            resendTimer = 60;
+            
+            const timerInterval = setInterval(() => {
+                resendTimer--;
+                resendLink.innerHTML = `
+                    <i class="fas fa-redo"></i>
+                    Resend Code (${resendTimer}s)
+                `;
+
+                if (resendTimer <= 0) {
+                    clearInterval(timerInterval);
+                    canResend = true;
+                    resendLink.innerHTML = `
+                        <i class="fas fa-redo"></i>
+                        Resend Verification Code
+                    `;
+                }
+            }, 1000);
+        }
+
+        // Start the resend timer when page loads
+        startResendTimer();
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
         }
     </script>
 </body>

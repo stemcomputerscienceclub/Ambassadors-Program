@@ -154,7 +154,10 @@ const userSchema = new mongoose.Schema({
   verified: { type: Boolean, default: false },
   referralCode: { type: String, unique: true },
   referralCount: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  verificationToken: { type: String },
+  otp: { type: String },
+  otpExpiresAt: { type: Date }
 });
 
 const otpSchema = new mongoose.Schema({
@@ -168,22 +171,70 @@ const otpSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 const OTP = mongoose.model('OTP', otpSchema);
 
-// Email transporter setup with better error handling
+// Email transporter setup with better error handling and rate limiting
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
+  pool: true, // Enable connection pooling
+  maxConnections: 5, // Maximum number of connections in the pool
+  maxMessages: 100, // Maximum number of messages per connection
+  rateDelta: 1000, // Time in ms between messages
+  rateLimit: 5, // Maximum number of messages per rateDelta
   tls: {
     rejectUnauthorized: false // For development only
   }
 });
 
+// Email sending queue to handle rate limits
+const emailQueue = [];
+let isProcessingQueue = false;
+
+async function processEmailQueue() {
+  if (isProcessingQueue || emailQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  try {
+    while (emailQueue.length > 0) {
+      const { mailOptions, resolve, reject } = emailQueue.shift();
+      try {
+        await transporter.sendMail(mailOptions);
+        resolve();
+      } catch (error) {
+        if (error.code === 'EENVELOPE' || error.code === 'EAUTH') {
+          // Critical error, reject immediately
+          reject(error);
+        } else {
+          // Rate limit or temporary error, retry after delay
+          emailQueue.push({ mailOptions, resolve, reject });
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
+    }
+  } finally {
+    isProcessingQueue = false;
+  }
+}
+
+// Function to send email with rate limiting
+async function sendEmail(mailOptions) {
+  return new Promise((resolve, reject) => {
+    emailQueue.push({ mailOptions, resolve, reject });
+    processEmailQueue();
+  });
+}
+
 // Verify email configuration
 transporter.verify((error, success) => {
   if (error) {
     console.error('Email configuration error:', error);
+    if (error.code === 'EAUTH') {
+      console.error('Authentication failed. Please check your email credentials.');
+    } else if (error.code === 'ECONNECTION') {
+      console.error('Connection to email server failed. Please check your internet connection.');
+    }
   } else {
     console.log('Email server is ready to send messages');
   }
@@ -191,7 +242,7 @@ transporter.verify((error, success) => {
 
 // Generate OTP
 function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(10000 + Math.random() * 90000).toString(); // 5-digit OTP
 }
 
 // Generate verification token
@@ -201,23 +252,27 @@ function generateVerificationToken() {
 
 // Function to generate the next referral code
 async function generateNextReferralCode() {
-  try {
-    // Find the highest existing referral code number
-    const lastUser = await User.findOne({}, {}, { sort: { 'referralCode': -1 } });
-    let nextNumber = 1;
-    
-    if (lastUser && lastUser.referralCode) {
-      const lastNumber = parseInt(lastUser.referralCode.split('-')[2]);
-      nextNumber = lastNumber + 1;
+    try {
+        // Find the highest existing referral code number
+        const lastUser = await User.findOne({ referralCode: { $regex: /^STEM-CSC-\d{3}$/ } })
+            .sort({ referralCode: -1 });
+        
+        let nextNumber = 1;
+        
+        if (lastUser && lastUser.referralCode) {
+            const lastNumber = parseInt(lastUser.referralCode.split('-')[2]);
+            if (!isNaN(lastNumber)) {
+                nextNumber = lastNumber + 1;
+            }
+        }
+        
+        // Format the number with leading zeros
+        const formattedNumber = nextNumber.toString().padStart(3, '0');
+        return `STEM-CSC-${formattedNumber}`;
+    } catch (error) {
+        console.error('Error generating referral code:', error);
+        throw error;
     }
-    
-    // Format the number with leading zeros
-    const formattedNumber = nextNumber.toString().padStart(3, '0');
-    return `STEM-CSC-${formattedNumber}`;
-  } catch (error) {
-    console.error('Error generating referral code:', error);
-    throw error;
-  }
 }
 
 // Register new user with better error handling
@@ -259,49 +314,58 @@ app.post('/api/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate verification token
+    // Generate verification token and OTP
     const verificationToken = generateVerificationToken();
+    const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Create new user
+    // Create new user with a temporary referral code
     const user = new User({
       name,
       email,
       phone,
       password: hashedPassword,
-      verificationToken
+      verificationToken,
+      otp,
+      otpExpiresAt: expiresAt,
+      referralCode: `TEMP-${Date.now()}` // Temporary unique code
     });
 
     await user.save();
 
-    // Generate verification link
-    const verificationLink = `${process.env.FRONTEND_URL}/verify?token=${verificationToken}`;
-
-    try {
-      // Send verification email
-      const mailOptions = {
+    // Send verification email
+    const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: email,
+        to: user.email,
         subject: 'Verify your email for CS & Tech Ambassadors Program',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #4a90e2;">Welcome to CS & Tech Ambassadors Program!</h1>
-            <p>Hello ${name},</p>
-            <p>Thank you for registering as an Ambassador. To complete your registration, please click the button below to verify your email address:</p>
-            <div style="text-align: center; margin: 20px 0;">
-              <a href="${verificationLink}" style="background-color: #4a90e2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-                Verify Email Address
-              </a>
-            </div>
-            <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
-            <p style="word-break: break-all;">${verificationLink}</p>
-            <p>This link will expire in 15 minutes.</p>
-            <p>Best regards,<br>CS & Tech Ambassadors Team</p>
-          </div>
-        `
-      };
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #4a90e2;">Welcome to CS & Tech Ambassadors Program!</h1>
+                <p>Hello ${user.name},</p>
+                <p>Your verification code is:</p>
+                
+                <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 10px;">
+                    <h2 style="color: #4a90e2; font-size: 2.5rem; letter-spacing: 5px; margin: 0;">${otp}</h2>
+                    <p style="color: #666; margin-top: 10px;">This code will expire in 15 minutes</p>
+                </div>
 
-      await transporter.sendMail(mailOptions);
+                <p>Click the button below to verify your email address automatically:</p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="${process.env.FRONTEND_URL}/verify.html?token=${verificationToken}" 
+                       style="background-color: #4a90e2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                        Verify Email Address
+                    </a>
+                </div>
+                <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
+                <p style="word-break: break-all;">${process.env.FRONTEND_URL}/verify.html?token=${verificationToken}</p>
+                <p>Best regards,<br>CS & Tech Ambassadors Team</p>
+            </div>
+        `
+    };
+
+    try {
+      // Send verification email with rate limiting
+      await sendEmail(mailOptions);
       res.status(201).json({
         message: 'Registration successful. Please check your email for verification.',
         verificationToken
@@ -309,7 +373,16 @@ app.post('/api/register', async (req, res) => {
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       await User.deleteOne({ email });
-      return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
+      
+      if (emailError.code === 'EENVELOPE') {
+        return res.status(400).json({ message: 'Invalid email address. Please check your email and try again.' });
+      } else if (emailError.code === 'EAUTH') {
+        return res.status(500).json({ message: 'Email service authentication failed. Please try again later.' });
+      } else if (emailError.code === 'ECONNECTION') {
+        return res.status(503).json({ message: 'Email service is temporarily unavailable. Please try again later.' });
+      } else {
+        return res.status(500).json({ message: 'Failed to send verification email. Please try again later.' });
+      }
     }
   } catch (error) {
     console.error('Registration error:', error);
@@ -318,42 +391,70 @@ app.post('/api/register', async (req, res) => {
 });
 
 // Verify email with token
-app.get('/api/verify', async (req, res) => {
-  try {
-    const { token } = req.query;
+app.post('/api/verify', async (req, res) => {
+    try {
+        const { code, token } = req.body;
+        console.log('Received verification request:', { code, token }); // Debug log
 
-    if (!token) {
-      return res.status(400).json({ message: 'Verification token is required' });
+        if (!token) {
+            console.error('Verification failed: No token provided');
+            return res.status(400).json({ message: 'Verification token is required' });
+        }
+
+        // Find user with matching token
+        const user = await User.findOne({ verificationToken: token });
+        console.log('Found user:', user ? { email: user.email, verified: user.verified } : 'Not found'); // Debug log
+        
+        if (!user) {
+            console.error('Verification failed: Invalid token', token);
+            return res.status(400).json({ message: 'Invalid or expired verification token' });
+        }
+
+        // Verify OTP
+        if (user.otp !== code) {
+            console.error('Verification failed: Invalid OTP for user', user.email);
+            return res.status(400).json({ message: 'Invalid verification code' });
+        }
+        
+        if (user.otpExpiresAt < new Date()) {
+            console.error('Verification failed: Expired OTP for user', user.email);
+            return res.status(400).json({ message: 'Verification code has expired' });
+        }
+
+        // Generate final referral code
+        const referralCode = await generateNextReferralCode();
+        console.log('Generated referral code:', referralCode); // Debug log
+
+        // Update user
+        user.verified = true;
+        user.referralCode = referralCode;
+        user.verificationToken = undefined;
+        user.otp = undefined;
+        user.otpExpiresAt = undefined;
+        
+        try {
+            await user.save();
+            console.log('User verified successfully:', user.email);
+        } catch (saveError) {
+            console.error('Error saving user after verification:', saveError);
+            return res.status(500).json({ message: 'Error completing verification. Please try again.' });
+        }
+
+        // Generate JWT token
+        const authToken = jwt.sign(
+            { email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            message: 'Email verified successfully',
+            token: authToken
+        });
+    } catch (error) {
+        console.error('Verification error:', error);
+        res.status(500).json({ message: 'An error occurred during verification. Please try again later.' });
     }
-
-    // Find user with matching token
-    const user = await User.findOne({ verificationToken: token });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification token' });
-    }
-
-    // Generate referral code
-    const referralCode = await generateNextReferralCode();
-
-    // Update user
-    user.verified = true;
-    user.referralCode = referralCode;
-    user.verificationToken = undefined;
-    await user.save();
-
-    // Generate JWT token
-    const authToken = jwt.sign(
-      { email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Redirect to dashboard with token
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${authToken}`);
-  } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
 });
 
 // Login
@@ -418,35 +519,100 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Get user dashboard data
+// Dashboard data endpoint
 app.get('/api/dashboard', authenticateToken, async (req, res) => {
   try {
     const user = await User.findOne({ email: req.user.email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get all verified users for leaderboard
-    const allUsers = await User.find({ verified: true })
+    // Get leaderboard data
+    const leaderboard = await User.find({ verified: true })
       .sort({ referralCount: -1 })
-      .select('email referralCode referralCount');
+      .limit(10)
+      .select('name referralCount');
 
-    // Find user's rank
-    const userRank = allUsers.findIndex(u => u.email === user.email) + 1;
+    // Calculate user's rank
+    const userRank = await User.countDocuments({
+      verified: true,
+      referralCount: { $gt: user.referralCount }
+    }) + 1;
+
+    // Get total ambassadors count
+    const totalAmbassadors = await User.countDocuments({ verified: true });
 
     res.json({
-      email: user.email,
-      referralCode: user.referralCode,
-      referralCount: user.referralCount,
+      name: user.name,
       rank: userRank,
-      totalAmbassadors: allUsers.length,
-      lastUpdate: lastUpdateTime,
-      timeUntilUpdate: UPDATE_INTERVAL - (Date.now() - lastUpdateTime.getTime()),
-      topAmbassadors: allUsers.slice(0, 10) // Top 10 ambassadors
+      referrals: user.referralCount,
+      totalAmbassadors,
+      referralCode: user.referralCode,
+      leaderboard: leaderboard.map(user => ({
+        name: user.name,
+        referrals: user.referralCount
+      }))
     });
   } catch (error) {
     console.error('Dashboard error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
+// Marketing materials endpoint
+app.get('/api/materials', authenticateToken, async (req, res) => {
+  try {
+    const materials = {
+      general: [
+        {
+          id: 'banner1',
+          title: 'Club Banner',
+          type: 'image',
+          url: '/images/marketing/banner1.jpg'
+        },
+        {
+          id: 'logo',
+          title: 'Club Logo',
+          type: 'image',
+          url: '/images/marketing/logo.png'
+        }
+      ],
+      tracks: [
+        {
+          id: 'web-dev',
+          title: 'Web Development Track',
+          type: 'image',
+          url: '/images/marketing/web-dev.jpg'
+        },
+        {
+          id: 'ai-ml',
+          title: 'AI & ML Track',
+          type: 'image',
+          url: '/images/marketing/ai-ml.jpg'
+        }
+      ],
+      registration: [
+        {
+          id: 'registration-guide',
+          title: 'Registration Guide',
+          type: 'image',
+          url: '/images/marketing/registration-guide.jpg'
+        }
+      ],
+      faq: [
+        {
+          id: 'faq-guide',
+          title: 'FAQ Guide',
+          type: 'image',
+          url: '/images/marketing/faq-guide.jpg'
+        }
+      ]
+    };
+
+    res.json(materials);
+  } catch (error) {
+    console.error('Materials error:', error);
+    res.status(500).json({ error: 'Failed to fetch marketing materials' });
   }
 });
 
@@ -467,19 +633,19 @@ async function updateReferralCounts() {
         const rows = response.data.values;
         if (!rows || rows.length <= 1) return;
 
-        // Find the column with referral codes
-        const headers = rows[0];
-        const referralCodeColumn = headers.findIndex(header => 
+    // Find the column with referral codes
+    const headers = rows[0];
+    const referralCodeColumn = headers.findIndex(header => 
             header.toLowerCase().includes('where did you hear about us')
-        );
+    );
 
-        if (referralCodeColumn === -1) {
+    if (referralCodeColumn === -1) {
             console.log('Referral code column not found in form responses');
-            return;
-        }
+      return;
+    }
 
         // Count referrals for each code
-        const referralCounts = {};
+    const referralCounts = {};
         for (let i = 1; i < rows.length; i++) {
             const response = rows[i][referralCodeColumn];
             if (response) {
@@ -487,13 +653,13 @@ async function updateReferralCounts() {
                 const matches = response.match(/STEM-CSC-\d{3}/g);
                 if (matches) {
                     matches.forEach(code => {
-                        referralCounts[code] = (referralCounts[code] || 0) + 1;
-                    });
+      referralCounts[code] = (referralCounts[code] || 0) + 1;
+    });
                 }
             }
         }
 
-        // Update user counts
+    // Update user counts
         const users = await User.find({});
         for (const user of users) {
             if (user.referralCode && referralCounts[user.referralCode]) {

@@ -1,437 +1,1736 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
-    <title>Ambassador Dashboard | STEM October CS & Tech Club</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #4a90e2;
-            --primary-dark: #357abd;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --success-color: #2ecc71;
-            --light-bg: #f8f9fa;
-            --dark-bg: #343a40;
-            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --transition-speed: 0.3s;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard | STEM October CS & Tech Club</title>
+  <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light-bg);
-            color: var(--secondary-color);
-            line-height: 1.6;
-        }
+    .nav-menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
 
-        .navbar {
-            background-color: white;
-            box-shadow: var(--card-shadow);
-            padding: 1rem 0;
-        }
+    .nav-item {
+      margin-bottom: 8px;
+    }
 
-        .navbar img {
-            height: 40px;
-        }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      color: var(--text-color);
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      transition: var(--transition);
+    }
 
-        .logout-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color var(--transition-speed);
-        }
+    .nav-link:hover,
+    .nav-link.active {
+      background: var(--primary-color);
+      color: white;
+    }
 
-        .logout-btn:hover {
-            background-color: var(--primary-dark);
-        }
+    .nav-link i {
+      width: 20px;
+    }
 
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
+    .main-content {
+      padding: 30px;
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
 
-        .header {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-            text-align: center;
-        }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
 
-        .header h1 {
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-            font-size: 2.5rem;
-        }
+    .welcome-text h1 {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+      color: var(--text-color);
+    }
 
-        .header p {
-            color: var(--secondary-color);
-            opacity: 0.8;
-            font-size: 1.1rem;
-        }
+    .welcome-text p {
+      color: #666;
+      font-size: 0.9rem;
+    }
 
-        .stats-card {
-            background-color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: var(--card-shadow);
-            transition: transform var(--transition-speed);
-            height: 100%;
-            text-align: center;
-        }
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
 
-        .stats-card:hover {
-            transform: translateY(-5px);
-        }
+    .notifications {
+      position: relative;
+      cursor: pointer;
+    }
 
-        .stats-card h3 {
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
+    .notifications i {
+      font-size: 1.2rem;
+      color: var(--text-color);
+    }
 
-        .stats-card .value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin-bottom: 0.5rem;
-        }
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--primary-color);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 5px;
+      border-radius: 10px;
+    }
 
-        .stats-card p {
-            color: var(--secondary-color);
-            opacity: 0.8;
-            margin: 0;
-        }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: var(--border-radius);
+      transition: var(--transition);
+    }
 
-        .referral-section {
-            background-color: white;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: var(--card-shadow);
-            margin: 2rem 0;
-            text-align: center;
-        }
+    .user-profile:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
 
-        .referral-section h4 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
 
-        .referral-code {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin: 1rem 0;
-            font-size: 1.8rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            box-shadow: var(--card-shadow);
-        }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
 
-        .copy-btn {
-            background-color: white;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            font-weight: 600;
-            margin-top: 1rem;
-        }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      box-shadow: var(--box-shadow);
+      transition: var(--transition);
+    }
 
-        .copy-btn:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
 
-        .leaderboard {
-            background-color: white;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-        }
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-        .leaderboard h3 {
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-            text-align: center;
-        }
+    .stat-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
 
-        .leaderboard-item {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background-color var(--transition-speed);
-        }
+    .stat-icon.purple {
+      background: #6f42c1;
+    }
 
-        .leaderboard-item:hover {
-            background-color: var(--light-bg);
-        }
+    .stat-icon.blue {
+      background: var(--primary-color);
+    }
 
-        .leaderboard-item:last-child {
-            border-bottom: none;
-        }
+    .stat-icon.green {
+      background: #28a745;
+    }
 
-        .rank {
-            font-weight: bold;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            min-width: 50px;
-        }
+    .stat-icon.orange {
+      background: #fd7e14;
+    }
 
-        .user-info {
-            flex-grow: 1;
-            margin: 0 1rem;
-        }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 5px;
+    }
 
-        .user-info div {
-            font-weight: 600;
-        }
+    .stat-label {
+      color: #666;
+      font-size: 0.9rem;
+    }
 
-        .user-info small {
-            color: var(--secondary-color);
-            opacity: 0.8;
-        }
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+    }
 
-        .count {
-            font-weight: bold;
-            color: var(--accent-color);
-            font-size: 1.2rem;
-            min-width: 100px;
-            text-align: right;
-        }
+    .trend-up {
+      color: #28a745;
+    }
 
-        .update-info {
-            text-align: center;
-            color: var(--secondary-color);
-            opacity: 0.8;
-            margin-top: 1rem;
-        }
+    .trend-down {
+      color: #dc3545;
+    }
 
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background-color: var(--success-color);
-            color: white;
-            padding: 1rem;
-            border-radius: 5px;
-            box-shadow: var(--card-shadow);
-            display: none;
-        }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
 
-        @media (max-width: 768px) {
-            .dashboard-container {
-                margin: 1rem auto;
-            }
+    .marketing-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+      max-height: calc(100vh - 200px);
+    }
 
-            .header h1 {
-                font-size: 2rem;
-            }
+    .marketing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-            .stats-card .value {
-                font-size: 2rem;
-            }
+    .language-switcher {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
 
-            .referral-code {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+    .language-btn {
+      padding: 6px 12px;
+      border: 1px solid #e1e1e1;
+      border-radius: var(--border-radius);
+      background: white;
+      color: #666;
+      cursor: pointer;
+      transition: var(--transition);
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .language-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .language-btn:not(.active) {
+      display: block !important;
+    }
+
+    .marketing-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .category-btn {
+      padding: 8px 16px;
+      border: 1px solid #e1e1e1;
+      border-radius: var(--border-radius);
+      background: white;
+      color: #666;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .category-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      color: var(--text-color);
+      font-weight: 600;
+      margin: 20px 0 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e1e1e1;
+    }
+
+    .marketing-title {
+      font-size: 1.2rem;
+      color: var(--text-color);
+      font-weight: 600;
+    }
+
+    .marketing-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #e1e1e1;
+      padding-bottom: 10px;
+    }
+
+    .marketing-tab {
+      padding: 8px 16px;
+      cursor: pointer;
+      color: #666;
+      border-radius: var(--border-radius);
+      transition: var(--transition);
+    }
+
+    .marketing-tab.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .marketing-content {
+      display: none;
+    }
+
+    .marketing-content.active {
+      display: block;
+    }
+
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    body {
+      overflow: auto !important;
+    }
+
+    .material-card {
+      background: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      transition: var(--transition);
+    }
+
+    .material-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .material-image {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    .material-info {
+      padding: 15px;
+    }
+
+    .material-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+
+    .material-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .material-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: var(--border-radius);
+      background: var(--primary-color);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .material-btn:hover {
+      opacity: 0.9;
+    }
+
+    .template-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: var(--box-shadow);
+    }
+
+    .template-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+
+    .template-content {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-bottom: 15px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+
+    .template-content[data-lang="ar"] {
+      direction: rtl;
+      text-align: right;
+    }
+
+    .template-content[data-lang="en"] {
+      direction: ltr;
+      text-align: left;
+    }
+
+    .url-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .url-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      background: white;
+      border-radius: var(--border-radius);
+      margin-bottom: 10px;
+      box-shadow: var(--box-shadow);
+    }
+
+    .url-text {
+      flex: 1;
+      word-break: break-all;
+      color: var(--text-color);
+    }
+
+    .url-text[data-lang="ar"] {
+      direction: rtl;
+      text-align: right;
+    }
+
+    .url-text[data-lang="en"] {
+      direction: ltr;
+      text-align: left;
+    }
+
+    .url-copy {
+      padding: 8px 12px;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .url-copy:hover {
+      opacity: 0.9;
+    }
+
+    .chart-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      box-shadow: var(--box-shadow);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .chart-title {
+      font-size: 1.2rem;
+      color: var(--text-color);
+      font-weight: 600;
+    }
+
+    .chart-filters {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-btn {
+      padding: 8px 12px;
+      border: 1px solid #e1e1e1;
+      border-radius: var(--border-radius);
+      background: white;
+      color: #666;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .chart-container {
+      height: 300px;
+      margin-top: 20px;
+    }
+
+    .leaderboard {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      box-shadow: var(--box-shadow);
+    }
+
+    .leaderboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .leaderboard-title {
+      font-size: 1.2rem;
+      color: var(--text-color);
+      font-weight: 600;
+    }
+
+    .view-all {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .leaderboard-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      margin: 10px 0;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-item.current-user {
+      background: rgba(var(--primary-color-rgb), 0.1);
+      border-left: 3px solid var(--primary-color);
+    }
+
+    .leaderboard-item .rank {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .leaderboard-item .name {
+      flex-grow: 1;
+      margin: 0 20px;
+    }
+
+    .leaderboard-item .points {
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 30px;
+      box-shadow: var(--box-shadow);
+      z-index: 1000;
+    }
+
+    .mobile-menu-list {
+      display: flex;
+      gap: 20px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .mobile-menu-item a {
+      color: #666;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+    }
+
+    .mobile-menu-item a i {
+      font-size: 1.2rem;
+    }
+
+    .mobile-menu-item a.active {
+      color: var(--primary-color);
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .mobile-menu {
+        display: block;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 20px;
+      }
+
+      .top-bar {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-filters {
+        flex-wrap: wrap;
+      }
+    }
+
+    .error-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #ff4444;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .material-item {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 15px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .material-item:hover {
+      transform: translateY(-5px);
+    }
+
+    .material-item img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .material-item h3 {
+      color: #fff;
+      margin: 10px 0;
+      font-size: 1.2em;
+    }
+
+    .material-item button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .material-item button:hover {
+      background: #45a049;
+    }
+
+    .leaderboard-item.current-user {
+      background: rgba(var(--primary-color-rgb), 0.1);
+      border-left: 3px solid var(--primary-color);
+    }
+
+    :root {
+      --primary-color-rgb: 0, 123, 255;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 5px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .toast-success {
+      background-color: #4CAF50;
+    }
+
+    .toast-error {
+      background-color: #ff4444;
+    }
+
+    .toast-info {
+      background-color: #2196F3;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast i {
+      font-size: 1.2em;
+    }
+
+    .user-info {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar-small {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .user-name {
+      font-weight: 500;
+      color: var(--text-color);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  </style>
 </head>
+
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo"></a>
-            <button class="logout-btn" onclick="handleLogout()">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-    </nav>
-
-    <div class="dashboard-container">
-        <div class="header">
-            <h1>Welcome, <span id="userName">Loading...</span>!</h1>
-            <p>Your Ambassador Dashboard</p>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="stats-card">
-                    <h3>Your Rank</h3>
-                    <div class="value" id="userRank">#0</div>
-                    <p>out of <span id="totalAmbassadors">0</span> ambassadors</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card">
-                    <h3>Referrals</h3>
-                    <div class="value" id="referralCount">0</div>
-                    <p>successful referrals</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card">
-                    <h3>Next Update</h3>
-                    <div class="value" id="timeUntilUpdate">00:00:00</div>
-                    <p>until next leaderboard update</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="referral-section">
-            <h4>Your Referral Code</h4>
-            <div class="referral-code" id="referralCode">Loading...</div>
-            <button class="copy-btn" onclick="copyReferralCode()">
-                <i class="fas fa-copy"></i> Copy Code
-            </button>
-        </div>
-
-        <div class="leaderboard">
-            <h3>Top Ambassadors</h3>
-            <div id="leaderboardList">
-                <!-- Leaderboard items will be inserted here -->
-            </div>
-        </div>
-
-        <div class="update-info">
-            Last updated: <span id="lastUpdate">Never</span>
-        </div>
+  <canvas id="matrixCanvas"></canvas>
+  <main class="main-content">
+    <div class="top-bar">
+      <div class="welcome-text">
+        <h1>Welcome back, <span id="userName">Ambassador</span>!</h1>
+        <p>Here's what's happening with your ambassador status</p>
+      </div>
+      <div class="user-menu">
+        <button class="material-btn" onclick="handleLogout()" style="background-color: #dc3545;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
     </div>
 
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle"></i> Referral code copied to clipboard!
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <div>
+            <div class="stat-value" id="userRank">--</div>
+            <div class="stat-label">Current Rank</div>
+          </div>
+          <div class="stat-icon purple">
+            <i class="fas fa-trophy"></i>
+          </div>
+        </div>
+
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div>
+            <div class="stat-value" id="totalReferrals">0</div>
+            <div class="stat-label">Total Referrals</div>
+          </div>
+          <div class="stat-icon blue">
+            <i class="fas fa-users"></i>
+          </div>
+        </div>
+
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div>
+            <div class="stat-value" id="totalAmbassadors">0</div>
+            <div class="stat-label">Total Ambassadors</div>
+          </div>
+          <div class="stat-icon green">
+            <i class="fas fa-star"></i>
+          </div>
+        </div>
+
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div>
+            <div class="stat-value">
+              <span id="referralCode">----</span>
+            </div>
+            <div class="stat-label">Your Referral Code</div>
+          </div>
+          <div class="stat-icon orange">
+            <i class="fas fa-link"></i>
+          </div>
+        </div>
+        <button class="copy-btn language-btn active" onclick="copyReferralCode()">
+          <i class="fas fa-copy"></i>
+          Copy Code
+        </button>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let dashboardData = null;
-        const toast = document.getElementById('toast');
+    <div class="content-grid">
 
-        function showToast() {
-            toast.style.display = 'block';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 3000);
+      <section class="leaderboard">
+        <div class="leaderboard-header">
+          <h2 class="leaderboard-title">Top Ambassadors</h2>
+        </div>
+        <ul class="leaderboard-list" id="leaderboardList">
+          <!-- Leaderboard items will be added here dynamically -->
+        </ul>
+      </section>
+    </div>
+
+    <section class="marketing-section">
+      <div class="marketing-header">
+        <h2 class="marketing-title">Marketing Materials</h2>
+        <div class="language-switcher">
+          <button class="language-btn active" data-lang="en">English</button>
+          <button class="language-btn" data-lang="ar">العربية</button>
+        </div>
+      </div>
+
+      <div class="marketing-categories">
+        <button class="category-btn active" data-category="general">General Materials</button>
+        <button class="category-btn" data-category="tracks">Track Descriptions</button>
+        <button class="category-btn" data-category="registration">Registration</button>
+        <button class="category-btn" data-category="faq">FAQs</button>
+      </div>
+
+      <div class="marketing-tabs">
+        <div class="marketing-tab active" data-tab="images">Images</div>
+        <div class="marketing-tab" data-tab="texts">Text Messages</div>
+      </div>
+
+      <div class="marketing-content active" id="images-content">
+        <div class="category-content" data-category="general">
+          <h3 class="section-title">General Club Materials</h3>
+          <div class="materials-grid">
+            <div class="material-card">
+              <img src="./images/marketing/ApplyforMembership.jpg" alt="Club Banner" class="material-image">
+              <div class="material-info">
+                <div class="material-title">Club Banner</div>
+                <div class="material-actions">
+                  <button class="material-btn" onclick="downloadMaterial('ApplyforMembership.jpg')">
+                    <i class="fas fa-download"></i> Download
+                  </button>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="material-card">
+              <img src="./images/marketing/Presentation.png" alt="Info Session Presentation" class="material-image">
+              <div class="material-info">
+                <div class="material-title">Info Session Presentation</div>
+                <div class="material-actions">
+                  <a class="material-btn" href="https://www.canva.com/design/DAGkZwA0w94/Bz6Z_UOPEWY-EnoSfiEiMA/view?utm_content=DAGkZwA0w94&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h821d6bbd4e" target="_blank" rel="noopener noreferrer">
+                    <i class="fas fa-external-link-alt"></i> View Presentation
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-content" data-category="registration" style="display: none;">
+          <h3 class="section-title">Registration Materials</h3>
+          <div class="materials-grid">
+            <div class="material-card">
+              <img src="./images/marketing/ApplyforMembership.jpg" alt="Registration Banner" class="material-image">
+              <div class="material-info">
+                <div class="material-title">Registration Banner</div>
+                <div class="material-actions">
+                  <button class="material-btn" onclick="downloadMaterial('ApplyforMembership.jpg')">
+                    <i class="fas fa-download"></i> Download
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="material-card">
+              <img src="./images/marketing/InfoSession.jpg" alt="Registration Banner" class="material-image">
+              <div class="material-info">
+                <div class="material-title">InfoSession Banner</div>
+                <div class="material-actions">
+                  <button class="material-btn" onclick="downloadMaterial('InfoSession.jpg')">
+                    <i class="fas fa-download"></i> Download
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="material-card">
+              <img src="./images/marketing/DeadlineExtension.jpg" alt="Registration Banner" class="material-image">
+              <div class="material-info">
+                <div class="material-title">Deadline Extension Banner</div>
+                <div class="material-actions">
+                  <button class="material-btn" onclick="downloadMaterial('DeadlineExtension.jpg')">
+                    <i class="fas fa-download"></i> Download
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+      <div class="marketing-content" id="texts-content">
+        <div class="category-content" data-category="general">
+          <h3 class="section-title">General Text Templates</h3>
+          <div class="template-card">
+            <div class="template-title">Welcome Text Template</div>
+            <div class="template-content" data-lang="en">
+              After a long wait, CODEY PRESENTS THE MEMBERS RECRUITMENT
+              Hey future coder,
+              I am Codey, your assistant during your programming journey, and I am here to announce to you that
+              STEM CS Club is now OPEN FOR NEW.
+
+              🎯 Use my referral code: {REFERRAL_CODE} when applying!
+
+              Choose your mission (you can apply for multiple tracks):
+              • Fundamentals of Programming.
+              • Web Development.
+              • Game Development.
+              • Generative AI.
+              • Machine Learning (AI).
+              • Competitive Programming.
+              • Quantum Computing.
+
+              What are you waiting for? Apply now 🔽🔽
+              https://forms.gle/kUvXuLs6xDndcGMf7
+              Deadline: April 30th
+
+              Want to meet the crew early, catch event drops, or just scream about semicolons?
+              Hop into the server: https://discord.gg/au6w3yXCmV
+              #stem_computer_science_club
+              #Codey
+              #Season2Booting
+              #computerscience
+              #TechCommunity
+              #CSForEveryone
+            </div>
+
+            <div class="template-content" data-lang="ar" style="display: none;">
+              السلام عليكم يا شباب STEM CS Club فتح التقديم لاي حد عاوز يتعلم مجالات ال computer science وسنه من اول 1 اعدادي لحد under graduates، الكلاب بيدرس CS بقاله ١٠ سنين وكل سنة ناس جديدة بتدخل وتتعلم والحمد لله ناس كتير منهم وصلو لأماكن كويسة سواء جامعات أو شغل كويس.
+
+              🎯 استخدم كود الدعوة الخاص بي عند التقديم: {REFERRAL_CODE}
+
+              السيزون دا هيكون في شرح المجالات دي:
+              - Web development
+              - Machine Learning abd AI
+              - Generative AI
+              - Competitive Programming
+              - Game Development
+              - Fundamentals of Programming
+              - Quantum Computing.
+
+              الحمد لله المينتورز السنة دي على أعلى مستوى وكتير منهم كسبان مسابقات عربية وعالمية في مجاله زي ISEF Global 1st place و 4th place Arab AI Olympiads ومراكز وميداليز في EOI و ECPC وحاجات تاني كتير.
+
+              التقديم مش محتاج اي خبرة او معرفة و هنبدأ من الصفر في كل التراكات إن شاء الله.
+
+              تابعونا على صفحتنا علشان هينزل تفاصيل كتير على التراكات وهيكون في انفو سيشن قريب جدا إن شاء الله:
+              https://whatsapp.com/channel/0029VabT6k77IUYdqXKFeW0Z
+
+              https://discord.gg/au6w3yXCmV
+              وده لينك سيرفر ديسكورد اي حد عنده اسئلة يقدر يسال فيه
+
+              https://www.facebook.com/share/15qNnfnhFP/
+
+              https://www.instagram.com/stem_computer_science_club/profilecard/?igsh=MWJnczZnNnZrbnc3eA==
+
+              https://www.linkedin.com/company/stem-computer-science-club/
+
+              لينك فورم التقديم:
+              https://forms.gle/kUvXuLs6xDndcGMf7
+
+              Deadline: 30th April
+            </div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Last Call for Registration</div>
+            <div class="template-content" data-lang="en">
+              🚨 CODEY'S TRANSMISSION: DEADLINE EXTENDED 🚨
+              
+              Hey future coder,
+              Codey here – with a final gift from the mainframe, crossing the boundary of time itself to give you extra runway. I've overridden the system clock and pushed our application deadline to April 30, 2025 – 11:59 PM. 
+
+              🎯 Don't forget to use my referral code when applying: {REFERRAL_CODE}
+
+              This is your last chance to join a community fueled by curiosity and creativity.
+              
+              Pick your missions (choose up to two):
+              • Fundamentals of Programming
+              • Web Development
+              • Game Development
+              • Generative AI
+              • Machine Learning (AI)
+              • Competitive Programming
+              • Quantum Computing
+
+              Apply Now: https://forms.gle/kUvXuLs6xDndcGMf7
+              New Deadline: April 30, 2025 – 11:59 PM
+
+              #stem_computer_science_club
+              #Codey
+              #Season2Booting
+              #CSForEveryone
+              #TechCommunity
+            </div>
+
+            <div class="template-content" data-lang="ar" style="display: none;">
+              🚨 تمديد الموعد النهائي للتسجيل 🚨
+
+              السلام عليكم! 
+              أنا Codey، وعندي خبر مهم ليكم. تم تمديد موعد التسجيل في نادي STEM للحاسب الآلي حتى 30 أبريل 2025 الساعة 11:59 مساءً.
+
+              🎯 لا تنسى استخدام كود الدعوة الخاص بي عند التقديم: {REFERRAL_CODE}
+
+              دي فرصتك الأخيرة للانضمام لمجتمع مليء بالإبداع والابتكار!
+
+              اختر مساراتك (يمكنك اختيار مسارين):
+              • أساسيات البرمجة
+              • تطوير الويب
+              • تطوير الألعاب
+              • الذكاء الاصطناعي التوليدي
+              • تعلم الآلة
+              • البرمجة التنافسية
+              • الحوسبة الكمية
+
+              رابط التقديم: https://forms.gle/kUvXuLs6xDndcGMf7
+              الموعد النهائي الجديد: 30 أبريل 2025 - 11:59 مساءً
+
+              #STEM_CS_Club 
+              #Codey
+              #تعلم_البرمجة
+              #مجتمع_المبرمجين
+            </div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+        </div>
+
+        <div class="category-content" data-category="tracks" style="display: none;">
+          <h3 class="section-title">Track Descriptions</h3>
+          <div class="template-card">
+            <div class="template-title">Machine Learning</div>
+            <div class="template-content" data-lang="en">Machine Learning is a track that focuses on building models or systems that learn from data and make predictions or decisions without being programmed for every case.
+              it is like building a digital brain trained to find patterns. For example, an ML model can learn to predict house prices based on location and size or detect spam emails by analyzing their content.
+              In this track You will learn:
+              - How data is collected, cleaned, and prepared
+              - Types of ML models (like decision trees, linear regression, neural networks)
+              - How to train and evaluate models
+              - Real-world uses like spam detection, recommendation systems, and fraud prediction
+              - By the end: You'll be able to create simple ML models and understand how companies like Netflix, Amazon, and Google personalize your experience. or make a model that uses computer vision to detect your emotions.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك الـ Machine Learning (تعلم الآلة)
+              التراك ده بيركز على إنك تبني systems أو models بتتعلّم من الداتا وتبدأ تتوقّع أو تاخد قرارات من نفسها، من غير ما تبرمجها لكل موقف.
+              يعني كأنك بتبرمج "مُخ رقمي" بيشوف نمط في الداتا ويتعلم منه.
+              مثلاً: تقدر تعمل model يتوقّع سعر شقة من المساحة والموقع، أو يتعرف على الرسائل المزعجة في الإيميل.
+
+              في التراك ده هتتعلّم:
+              - إزاي تجمع وتجهز وتنظف الداتا
+              - أنواع الـ ML models زي Decision Trees و Linear Regression و Neural Networks
+              - إزاي تدرب النموذج وتقيس كفاءته
+              - وتطبيقات كتير زي أنظمة الترشيح (زي اللي بيظهرلك أفلام مناسبة في Netflix)، وكشف الاحتيال، وتصنيف الصور
+              🎯 وفي الآخر: هتبقى قادر تعمل model بسيط، وتفهم إزاي شركات زي Amazon وGoogle بتستخدم الـ Machine Learning علشان تفهمك وتقدملك محتوى يليق بيك، أو حتى تعمل حاجة بتشوف وشك وتعرف مشاعرك!</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Web Development</div>
+            <div class="template-content" data-lang="en">Web Development is a track that teaches you how to build modern, responsive websites and web applications from scratch.
+              It's like learning how to create the digital shops, blogs, dashboards, and platforms we use every day. For example, you can build your own personal portfolio site, an online store, or a booking system.
+              In this track, you will learn:
+              - The building blocks of the web: HTML (structure), CSS (style), JavaScript (interactivity).
+              - How to create responsive layouts for mobile and desktop
+              - How to use frontend frameworks like React
+              - Backend basics: servers, databases (like MongoDB), APIs, and authentication
+              - How to deploy your website and make it live
+              By the end: You'll be able to design, build, and launch fully functional websites that look good and work well on any device.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك Web Development (تطوير الويب)
+              ده التراك اللي بيعلمك تبني مواقع وتطبيقات ويب من الصفر لحد ما تبقى لايف ومتاحة للناس.
+              يعني لو نفسك تعمل بلوج، صفحة خدمات، أو حتى ستور أونلاين — ده التراك المناسب ليك.
+
+              في التراك ده هتتعلّم:
+              - الأساسيات: HTML (الشكل العام)، CSS (الديزاين)، JavaScript (الحركة والتفاعل)
+              - إزاي تصمّم موقع يشتغل على الموبايل والكمبيوتر
+              - تشتغل بفريموركات زي React علشان تسرّع شغلك
+              - الأساسيات من الـ Backend زي السيرفرات والـ Databases (زي MongoDB) والـ APIs
+              - وفي الآخر، إزاي ترفع الموقع بتاعك ويشتغل أونلاين قدام الناس
+
+              وفي الآخر: هتكون قادر تبني موقع كامل من أول صفحة الـ Home لحد صفحة الدفع، سواء كنت عايز تعرض خدماتك، أو تبيع منتجاتك، أو تعمل بورتفوليو احترافي.</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Generative AI</div>
+            <div class="template-content" data-lang="en">Generative AI is a track that focuses on creating systems that can generate new content — such as text, images, code, or music — based on patterns learned from large amounts of data. It's like teaching a machine to be creative by learning from what humans have already made. For example, a generative AI tool can write blog posts, design logos, or even create entire websites from a text prompt.
+              In this track, you will learn:
+              - How generative models like Chat GPT (text), Google Labs (images), and 11 Labs (music) work
+              - How to write effective prompts to guide AI behavior
+              - Fine-tuning pre-trained AI models for specific tasks
+              - Applications in marketing, content creation, customer support, and design
+              - How to make automations using AI Models
+              By the end: You'll be able to use generative AI to boost creativity, automate tasks, and build innovative projects — whether you're creating chat bots that talks like you, making automatic WhatsApp reply system, or generating an MCQs Solver.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك الـ Generative AI (الذكاء الاصطناعي التوليدي)
+              ده بقى التراك اللي بيعلّمك تخلي الذكاء الاصطناعي "يبدع" ويولّد محتوى جديد من نفسه — سواء نص، صورة، كود، أو حتى موسيقى!
+              يعني بتعلم الآلة تكون فنانة، بس بدل الفرشة، بتشتغل بالكود والداتا.
+
+              مثال بسيط: ممكن تطلب من Generative AI يكتب لك مقال، يصمملك لوجو، أو حتى يبني ويب سايت كامل من مجرد وصف بسيط.
+
+              في التراك ده هتتعلّم:
+              - إزاي النماذج دي شغالة (زي ChatGPT للنصوص، Google Labs للصور، و11 Labs للصوت)
+              - إزاي تكتب Prompt قوي يخلي الذكاء الاصطناعي يفهمك ويقدملك اللي في دماغك
+              - إزاي تخصّص موديل لحاجة معينة (Fine-tuning)
+              - وإزاي تستخدم الذكاء الاصطناعي في الشغل: في الماركتنج، خدمة العملاء، صناعة المحتوى، وغيره
+              - كمان هتتعلم تعمل أوتوميشن كامل لمهام كتير
+
+              وفي الآخر: هتقدر تعمل أفكار مجنونة زي chatbot بيرد بصوتك، أو WhatsApp bot بيرد تلقائي على الناس، أو AI يحلّلك امتحانات اختياري!</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Quantum Computing</div>
+            <div class="template-content" data-lang="en">Quantum Computing is a track that explores a new kind of computer that uses the principles of quantum physics to solve problems much faster than classical computers. It's like going from a bike (classical computing) to a spaceship (quantum computing) for specific problems. For example, quantum computers can help in simulating molecules for drug discovery or solving complex optimization problems.
+              In this track, you will learn:
+              - The difference between bits and qubits
+              - Key concepts like superposition, entanglement, and quantum gates
+              - How quantum circuits work and how to write basic quantum programs
+              - Real-world applications in cryptography, AI, and scientific computing
+              - Tools like IBM Qiskit to run quantum code on simulators or real quantum hardware
+              By the end: You'll have a solid understanding of how quantum computing works and why it's a game-changer in fields like finance, health, and security.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك الـ Quantum Computing (الحوسبة الكمية)
+              ده بقى التراك بتاع الناس اللي بتحب الحاجات الخارقة! Quantum Computing هو نوع جديد تمامًا من الحوسبة، بيعتمد على قوانين فيزيائية غريبة شوية بس قوية جدًا.
+              يعني بدل ما الجهاز بيشتغل بـ "0 و1" بس، الـ Quantum بيشتغل بحاجات اسمها Qubits بتخلي الكمبيوتر يفكر في كذا احتمال في نفس الوقت.
+
+              في التراك ده هتتعلم:
+              - يعني إيه Qubit؟ وإزاي بيشتغل غير الـ Bit العادي
+              - مفاهيم زي الـ Superposition والـ Entanglement
+              - تكتب دوائر كمّية (Quantum Circuits) وتنفذها باستخدام أدوات زي Qiskit من IBM
+              - وتعرف التكنولوجيات اللي ممكن Quantum Computing يغير فيها كل حاجة: الطب، الأمن السيبراني، الاقتصاد
+              في الآخر: هتكون خدت فكرة محترمة عن المجال ده، وتقدر تبدأ تبني تجارب بسيطة وتفهم إزاي المستقبل داخل عليه جامد جدًا.</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Game Development</div>
+            <div class="template-content" data-lang="en">Game Development is a track that teaches you how to build video games — from design to code — using professional game engines. It's like turning your creative ideas into playable experiences. For example, you can make a 2D platformer like Mario, or a 3D racing game with sound effects and character animations.
+              In this track, you will learn:
+              - How to use game engines like Unity or Unreal Engine
+              - Basics of game design, storyboarding, and player interaction
+              - Scripting behaviors using languages like C# (in Unity)
+              - Creating game assets (characters, environments, sound, UI)
+              - Exporting and testing your game on different platforms (PC, mobile, web)
+              By the end: You'll be able to design and develop your own playable games, and understand the pipeline behind game production.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك الـ Game Development (تطوير الألعاب)
+              لو بتحب الألعاب ومش بس عايز تلعب، لأ... نفسك تصمّم لعبة من أولها لآخرها؟ التراك ده معمول علشانك!
+              هنا هتتعلم إزاي تبني لعبة كاملة بنفسك، سواء كانت 2D بسيطة أو حتى 3D فيها أكشن وقصص.
+
+              في التراك ده هتتعلم:
+              - إزاي تصمّم شخصيات ومستويات وقصص للّعبة
+              - تشتغل على Game Engines زي Unity أو Unreal
+              - تبرمج تحركات اللاعبين، الأصوات، والتأثيرات اللي بتحصل جوه اللعبة
+              - تتعلم أساسيات الجرافيكس والأنيميشن
+              - وفي الآخر: إزاي تعمل Export وتنشر لعبتك على الموبايل أو الكمبيوتر
+              بنهاية التراك: هتكون قادر تعمل لعبتك الأولى وتبدأ تبني بورتفوليو قوي يدخلّك عالم صناعة الألعاب من أوسع أبوابه.</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Fundamentals of Programming</div>
+            <div class="template-content" data-lang="en">Fundamentals of Programming is the essential starting point for anyone new to coding. It teaches you how to "talk" to computers and build simple programs.
+              It's like learning the alphabet and grammar before writing essays. For example, you can write a calculator app, a to-do list, or a simple game using code.
+
+              In this track, you will learn:
+              - Basic concepts like variables, data types, conditionals, and loops
+              - How to write and organize code using functions
+              - Introduction to common programming languages like C# or Java
+              - How to debug errors and improve your logic
+              - Problem-solving through small, real-world projects
+              By the end: You'll understand how programming works, write your own code, and be ready to move on to more advanced tracks like Web Development or Machine Learning.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك Fundamentals of Programming (أساسيات البرمجة)
+              لو أنت لسه بتبدأ وعمرك ما كتبت كود قبل كده، التراك ده هو أول خطوة ليك في عالم البرمجة.
+              هنا هتفهم يعني إيه "تفكير برمجي"، وتتعلم تبني منطق لحل المشاكل قبل ما تمسك كيبورد وتكتب كود.
+
+              في التراك ده هتتعلم:
+              - يعني إيه متغيّرات، حلقات (Loops)، شروط (Conditions)
+              - تكتب أول كود ليك بلغة برمجة زي Python
+              - تبني برامج بسيطة بتحسب، تطبع، تاخد مدخلات
+              - تحوّل أي مشكلة يومية لفكرة برمجية وتبنيها بنفسك
+              بنهاية التراك: هتبقى فاهم الأساسيات كويس، وتكون جاهز تدخل أي تراك تاني سواء Web, AI, أو حتى Game Dev بثقة.</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Competitive Programming</div>
+            <div class="template-content" data-lang="en">Competitive Programming is a track that sharpens your logic and problem-solving skills through coding challenges. It's like doing math puzzles with code — fast, smart, and efficient. For example, you might write code to solve how many ways someone can climb stairs, or find the shortest path through a maze.
+              In this track, you will learn:
+              - Core data structures and algorithms (arrays, trees, graphs, etc.)
+              - Techniques like recursion, dynamic programming, and greedy methods
+              - How to write clean and optimized code
+              - Time and space complexity analysis
+              - How to approach and solve problems under time constraints
+              By the end: You'll be ready for programming contests (like Codeforces, HackerRank, or Google Code Jam, ECPC, EOI, and NUCPA), and be well-prepared for technical interviews at top tech companies.</div>
+            <div class="template-content" data-lang="ar" style="display: none;">تراك الـ Competitive Programming (البرمجة التنافسية)
+              التراك ده للناس اللي بتحب التحدي والتفكير السريع. Competitive Programming هو إنك تحل مسائل برمجية معقدة بسرعة وذكاء، وده بيساعدك في أي شغل تقني أو حتى مقابلات الشركات الكبيرة.
+
+              في التراك ده هتتعلم:
+              - تحل مشاكل باستخدام Algorithms زي Sorting, Searching, Recursion, DP
+              - تعرف Data Structures زي Stacks, Queues, Trees, Graphs
+              - تتدرّب على منصات زي Codeforces, HackerRank, LeetCode
+              - تفكر صح تحت ضغط، وتكتب كود نضيف وسريع
+              في النهاية: هتكون جاهز تدخل مسابقات برمجة، أو حتى Interviews في شركات Tech، وتبهرهم بإزاي بتفكّر وتحل المشاكل.</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+        </div>
+
+        <div class="category-content" data-category="registration" style="display: none;">
+          <h3 class="section-title">Registration Text Templates</h3>
+          <div class="template-card">
+            <div class="template-title">Registration Announcement</div>
+            <div class="template-content" data-lang="en">
+              After a long wait, CODEY PRESENTS THE MEMBERS RECRUITMENT
+              Hey future coder,
+              I am Codey, your assistant during your programming journey, and I am here to announce to you that
+              STEM CS Club is now OPEN FOR NEW.
+              Choose your mission (you can apply for multiple tracks):
+              • Fundamentals of Programming.
+              • Web Development.
+              • Game Development.
+              • Generative AI.
+              • Machine Learning (AI).
+              • Competitive Programming.
+              • Quantum Computing.
+              What are you waiting for? Apply now using my referral code: {REFERRAL_CODE} 🔽🔽
+              https://forms.gle/kUvXuLs6xDndcGMf7
+              Deadline: April 30th
+              Want to meet the crew early, catch event drops, or just scream about semicolons?
+              Hop into the server: https://discord.gg/au6w3yXCmV
+              #stem_computer_science_club
+              #Codey
+              #Season2Booting
+              #computerscience
+              #TechCommunity
+              #CSForEveryone
+            </div>
+
+            <div class="template-content" data-lang="ar" style="display: none;">
+              السلام عليكم يا شباب STEM CS Club فتح التقديم لاي حد عاوز يتعلم مجالات ال computer science وسنه من اول 1 اعدادي لحد under graduates، الكلاب بيدرس CS بقاله ١٠ سنين وكل سنة ناس جديدة بتدخل وتتعلم والحمد لله ناس كتير منهم وصلو لأماكن كويسة سواء جامعات أو شغل كويس.
+              السيزون دا هيكون في شرح المجالات دي:
+              - Web development
+              - Machine Learning abd AI
+              - Generative AI
+              - Competitive Programming
+              - Game Development
+              - Fundamentals of Programming
+              - Quantum Computing.
+
+              الحمد لله المينتورز السنة دي على أعلى مستوى وكتير منهم كسبان مسابقات عربية وعالمية في مجاله زي ISEF Global 1st place و 4th place Arab AI Olympiads ومراكز وميداليز في EOI و ECPC وحاجات تاني كتير.
+
+              التقديم مش محتاج اي خبرة او معرفة و هنبدأ من الصفر في كل التراكات إن شاء الله.
+              
+              استخدم كود الدعوة الخاص بي: {REFERRAL_CODE}
+
+              تابعونا على صفحتنا علشان هينزل تفاصيل كتير على التراكات وهيكون في انفو سيشن قريب جدا إن شاء الله:
+              https://whatsapp.com/channel/0029VabT6k77IUYdqXKFeW0Z
+
+              https://discord.gg/au6w3yXCmV
+              وده لينك سيرفر ديسكورد اي حد عنده اسئلة يقدر يسال فيه
+
+              https://www.facebook.com/share/15qNnfnhFP/
+
+              https://www.instagram.com/stem_computer_science_club/profilecard/?igsh=MWJnczZnNnZrbnc3eA==
+
+              https://www.linkedin.com/company/stem-computer-science-club/
+              لينك فورم التقديم:
+              https://forms.gle/kUvXuLs6xDndcGMf7
+
+              Deadline: 30th April
+            </div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Last Call for Registration</div>
+            <div class="template-content" data-lang="en">CODEY'S TRANSMISSION: DEADLINE EXTENDED 
+              Hey future coder,
+              Codey here – with a final gift from the mainframe, crossing the boundary of time itself to give you extra runway. I've overridden the system clock and pushed our application deadline to April 30, 2025 – 11:59 PM. This is your last chance to join a community fueled by curiosity and creativity.
+              
+              Use my referral code: {REFERRAL_CODE}
+              
+              Pick your missions (choose up to two):
+              • Fundamentals of Programming
+              • Web Development
+              • Game Development
+              • Generative AI
+              • Machine Learning (AI)
+              • Competitive Programming
+              • Quantum Computing
+              Apply Now: https://forms.gle/kUvXuLs6xDndcGMf7
+              New Deadline: April 30, 2025 – 11:59 PM
+              #stem_computer_science_club
+              #Codey
+              #Season2Booting
+              #CSForEveryone
+              #TechCommunity</div>
+            <div class="template-content" data-lang="ar" style="display: none;">
+              لا تدع هذه الفرصة تفوتك!
+              استخدم كود الدعوة: {REFERRAL_CODE}
+              سجل الآن: forms.gle/kUvXuLs6xDndcGMf7
+
+              آخر موعد: 30 أبريل، 11:59 مساءً
+              #STEMCSClub #آخر_فرصة #تعليم_تقني</div>
+            <button class="material-btn" onclick="copyTemplate(this)">
+              <i class="fas fa-copy"></i> Copy Template
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Matrix background animation
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Matrix characters
+    const chars = "01";
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+
+    // Initialize drops
+    for (let i = 0; i < columns; i++) {
+      drops[i] = 1;
+    }
+
+    // Draw function
+    function draw() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#0F0";
+      ctx.font = fontSize + "px monospace";
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+
+    // Animation loop
+    setInterval(draw, 33);
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      columns = canvas.width / fontSize;
+      drops.length = 0;
+      for (let i = 0; i < columns; i++) {
+        drops[i] = 1;
+      }
+    });
+
+    // Initialize dashboard data
+    async function initializeDashboard() {
+      try {
+        const response = await fetch('/api/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
         }
 
-        async function fetchDashboardData() {
-            try {
-                const response = await fetch('/api/dashboard', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login.html';
-                        return;
-                    }
-                    throw new Error('Failed to fetch dashboard data');
-                }
+        const data = await response.json();
 
-                dashboardData = await response.json();
-                updateDashboard();
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-            }
+        // Update user info
+        document.getElementById('userName').textContent = data.name;
+        document.getElementById('referralCode').textContent = data.referralCode;
+        document.getElementById('totalReferrals').textContent = data.referrals;
+        document.getElementById('userRank').textContent = data.rank;
+        document.getElementById('totalAmbassadors').textContent = data.totalAmbassadors || 0;
+
+        // Update leaderboard
+        const leaderboardList = document.getElementById('leaderboardList');
+        leaderboardList.innerHTML = '';
+
+        // Sort leaderboard by referrals in descending order and ensure referrals is a number
+        data.leaderboard.sort((a, b) => (Number(b.referrals) || 0) - (Number(a.referrals) || 0));
+
+        // Take only top 5
+        const top5 = data.leaderboard.slice(0, 5);
+
+        top5.forEach((user, index) => {
+          const li = document.createElement('li');
+          // Add highlight class if this is the current user
+          const isCurrentUser = user.email === data.email;
+          const referralCount = Number(user.referrals) || 0;
+          const displayName = user.name || user.email.split('@')[0]; // Use username part of email if name is undefined
+
+          li.className = `leaderboard-item ${isCurrentUser ? 'current-user' : ''}`;
+          li.innerHTML = `
+            <div class="user-info">
+              <div class="rank">${index + 1}</div>
+              <div class="user-avatar-small">${displayName.charAt(0).toUpperCase()}</div>
+              <div class="user-name">${displayName}</div>
+            </div>
+            <div class="points">${referralCount} referral${referralCount !== 1 ? 's' : ''}</div>
+          `;
+          leaderboardList.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        showToast('Failed to load dashboard data. Please try again later.', 'error');
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+      <span>${message}</span>
+    `;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Initialize dashboard when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showToast('Please login to access the dashboard', 'error');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+        return;
+      }
+
+      initializeDashboard().then(() => {
+        updateTemplatePlaceholders();
+      }).catch(error => {
+        console.error('Dashboard initialization error:', error);
+        showToast('Failed to load dashboard data. Please try again later.', 'error');
+        // If there's an error with authentication, redirect to home
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+      });
+      initializeMatrixAnimation();
+    });
+
+    // Add logout function
+    function handleLogout() {
+      // Clear the token from localStorage
+      localStorage.removeItem('token');
+      
+      // Show success message
+      showToast('Logged out successfully', 'success');
+      
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    }
+
+    function copyReferralCode() {
+      const code = document.getElementById('referralCode').textContent;
+      navigator.clipboard.writeText(code)
+        .then(() => showToast('Referral code copied!', 'success'))
+        .catch(() => showToast('Failed to copy code', 'error'));
+    }
+
+    function downloadMaterial(filename) {
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = `./images/marketing/${filename}`;
+      link.download = filename;
+
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Downloading ${filename}...`, 'info');
+    }
+
+    function copyTemplate(button) {
+      const activeLang = document.querySelector('.language-btn.active').dataset.lang;
+      const templateCard = button.closest('.template-card');
+      const templateContent = templateCard.querySelector(`.template-content[data-lang="${activeLang}"]`);
+
+      if (!templateContent) {
+        console.error('Template content not found for language:', activeLang);
+        showToast('Template content not found', 'error');
+        return;
+      }
+
+      // Get the user's referral code
+      const referralCode = document.getElementById('referralCode').textContent;
+      
+      // Replace the placeholder with actual referral code
+      const text = templateContent.textContent
+        .trim()
+        .replace(/{REFERRAL_CODE}/g, referralCode);
+
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          console.log('Template copied successfully with referral code:', referralCode);
+          showToast('Template copied to clipboard!', 'success');
+        })
+        .catch(err => {
+          console.error('Failed to copy template:', err);
+          showToast('Failed to copy template', 'error');
+        });
+    }
+
+    function copyUrl(url) {
+      const activeLang = document.querySelector('.language-btn.active').dataset.lang;
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          console.log('URL copied successfully:', url);
+          showToast('URL copied to clipboard!', 'success');
+        })
+        .catch(err => {
+          console.error('Failed to copy URL:', err);
+          showToast('Failed to copy URL', 'error');
+        });
+    }
+
+    // Marketing materials functionality
+    document.querySelectorAll('.marketing-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and hide all content
+        document.querySelectorAll('.marketing-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.marketing-content').forEach(c => {
+          c.style.display = 'none';
+          c.classList.remove('active');
+        });
+
+        // Add active class to clicked tab and show corresponding content
+        tab.classList.add('active');
+        const content = document.getElementById(`${tab.dataset.tab}-content`);
+        if (content) {
+          content.style.display = 'block';
+          content.classList.add('active');
         }
+      });
+    });
 
-        function updateDashboard() {
-            if (!dashboardData) return;
-
-            document.getElementById('userName').textContent = dashboardData.name;
-            document.getElementById('userRank').textContent = `#${dashboardData.rank}`;
-            document.getElementById('totalAmbassadors').textContent = dashboardData.totalAmbassadors;
-            document.getElementById('referralCount').textContent = dashboardData.referralCount;
-            document.getElementById('referralCode').textContent = dashboardData.referralCode;
-            
-            const lastUpdate = new Date(dashboardData.lastUpdate);
-            document.getElementById('lastUpdate').textContent = lastUpdate.toLocaleString();
-
-            updateLeaderboard();
-            startUpdateTimer();
+    // Initialize language buttons visibility
+    document.addEventListener('DOMContentLoaded', () => {
+      const activeLang = document.querySelector('.language-btn.active').dataset.lang;
+      document.querySelectorAll(`[data-lang]`).forEach(el => {
+        if (el.classList.contains('template-content') || el.classList.contains('url-text')) {
+          el.style.display = el.dataset.lang === activeLang ? 'block' : 'none';
         }
+      });
 
-        function updateLeaderboard() {
-            const leaderboardList = document.getElementById('leaderboardList');
-            leaderboardList.innerHTML = '';
+      // Ensure English content is visible by default
+      document.querySelectorAll('.template-content[data-lang="en"]').forEach(el => {
+        el.style.display = 'block';
+      });
+    });
 
-            dashboardData.topAmbassadors.forEach((ambassador, index) => {
-                const item = document.createElement('div');
-                item.className = 'leaderboard-item';
-                item.innerHTML = `
-                    <div class="rank">#${index + 1}</div>
-                    <div class="user-info">
-                        <div>${ambassador.name}</div>
-                        <small>${ambassador.referralCode}</small>
-                    </div>
-                    <div class="count">${ambassador.referralCount} referrals</div>
-                `;
-                leaderboardList.appendChild(item);
-            });
-        }
+    // Language switching functionality
+    document.querySelectorAll('.language-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.language-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-        function startUpdateTimer() {
-            const timerElement = document.getElementById('timeUntilUpdate');
-            let timeLeft = dashboardData.timeUntilUpdate;
+        const lang = btn.dataset.lang;
+        document.querySelectorAll(`[data-lang]`).forEach(el => {
+          if (el.classList.contains('template-content') || el.classList.contains('url-text')) {
+            el.style.display = el.dataset.lang === lang ? 'block' : 'none';
+          }
+        });
+      });
+    });
 
-            const timer = setInterval(() => {
-                timeLeft -= 1000;
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    fetchDashboardData();
-                    return;
-                }
+    // Category switching functionality
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        const category = btn.dataset.category;
+        document.querySelectorAll('.category-content').forEach(content => {
+          content.style.display = content.dataset.category === category ? 'block' : 'none';
+        });
+      });
+    });
 
-                timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function copyReferralCode() {
-            const code = dashboardData.referralCode;
-            navigator.clipboard.writeText(code).then(() => {
-                showToast();
-            }).catch(err => {
-                console.error('Failed to copy referral code:', err);
-            });
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userData');
-            window.location.href = '/';
-        }
-
-        // Check authentication on page load
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login.html';
-        } else {
-            fetchDashboardData();
-            // Refresh data every minute
-            setInterval(fetchDashboardData, 60000);
-        }
-    </script>
+    // Function to update all template placeholders with actual referral code
+    function updateTemplatePlaceholders() {
+      const referralCode = document.getElementById('referralCode').textContent;
+      document.querySelectorAll('.template-content').forEach(template => {
+        template.innerHTML = template.innerHTML.replace(/{REFERRAL_CODE}/g, referralCode);
+      });
+    }
+  </script>
 </body>
+
 </html>

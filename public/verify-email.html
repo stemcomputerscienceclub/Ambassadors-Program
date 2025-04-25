@@ -1,105 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Verifying Email | STEM October CS & Tech Club</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="./images/logo.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
 </head>
 <body>
-    <nav>
-        <div class="container">
-            <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo"></a>
-        </div>
-    </nav>
-    <main>
-        <div class="wrap">
-            <h1>
-                <img class="logo" src="./images/logo.png" alt="CS & Tech Club Logo">
-                Email Verification
-            </h1>
-            <hr />
-            <article>
-                <div id="verificationStatus" class="verification-status">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Verifying your email...</p>
-                </div>
-            </article>
-        </div>
-    </main>
+<nav>
+  <div class="container">
+    <a href="/"><img src="./images/logo.png" alt="CS & Tech Club Logo" /></a>
+  </div>
+</nav>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get('token');
+<main>
+  <section class="auth-container" aria-label="Email Verification Status">
+    <div class="auth-box verification-status" role="main">
+      <img src="./images/logo.png" alt="CS & Tech Club Logo" class="logo" />
+      <h1>Email Verification</h1>
+      <div id="verificationStatus" aria-live="polite">
+        <i class="fas fa-spinner fa-spin" aria-hidden="true" style="font-size: 3rem; color: var(--accent-color);"></i>
+        <p>Verifying your email...</p>
+      </div>
+    </div>
+  </section>
+</main>
 
-            if (!token) {
-                showError('Invalid verification link');
-                return;
-            }
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
 
-            try {
-                // If token is a JWT, we've been redirected from successful verification
-                if (token.split('.').length === 3) {
-                    localStorage.setItem('token', token);
-                    showSuccess();
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 2000);
-                    return;
-                }
+    if (!token) {
+      showError('Invalid verification link');
+      return;
+    }
 
-                // Otherwise, verify the email
-                const response = await fetch(`/api/verify-email?token=${token}`);
-                
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Verification failed');
-                }
+    try {
+      if (token.split('.').length === 3) {
+        localStorage.setItem('token', token);
+        showSuccess();
+        setTimeout(() => {
+          window.location.href = '/dashboard.html';
+        }, 2000);
+        return;
+      }
 
-                // The server will handle the redirect with the JWT token
-            } catch (error) {
-                showError(error.message);
-            }
-        });
+      const response = await fetch(`/api/verify-email?token=${token}`);
 
-        function showSuccess() {
-            const status = document.getElementById('verificationStatus');
-            status.innerHTML = `
-                <i class="fas fa-check-circle" style="color: #22c55e; font-size: 3rem;"></i>
-                <p>Email verified successfully!</p>
-                <p style="font-size: 0.9rem; margin-top: 10px;">Redirecting to dashboard...</p>
-            `;
-        }
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Verification failed');
+      }
+    } catch (error) {
+      showError(error.message);
+    }
+  });
 
-        function showError(message) {
-            const status = document.getElementById('verificationStatus');
-            status.innerHTML = `
-                <i class="fas fa-exclamation-circle" style="color: #ef4444; font-size: 3rem;"></i>
-                <p>${message}</p>
-                <a href="/" style="display: inline-block; margin-top: 20px; color: var(--primary-color);">Return to Login</a>
-            `;
-        }
-    </script>
+  function showSuccess() {
+    const status = document.getElementById('verificationStatus');
+    status.innerHTML = `
+      <i class="fas fa-check-circle" style="color: #22c55e; font-size: 3rem;" aria-hidden="true"></i>
+      <p>Email verified successfully!</p>
+      <p style="font-size: 0.9rem; margin-top: 10px;">Redirecting to dashboard...</p>
+    `;
+  }
 
-    <style>
-        .verification-status {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .verification-status i {
-            font-size: 3rem;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-        }
-
-        .verification-status p {
-            font-size: 1.2rem;
-            margin: 10px 0;
-        }
-    </style>
+  function showError(message) {
+    const status = document.getElementById('verificationStatus');
+    status.innerHTML = `
+      <i class="fas fa-exclamation-circle" style="color: #ef4444; font-size: 3rem;" aria-hidden="true"></i>
+      <p>${message}</p>
+      <a href="/" style="display: inline-block; margin-top: 20px; color: var(--accent-color);">Return to Login</a>
+    `;
+  }
+</script>
 </body>
 </html>
