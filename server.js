@@ -186,6 +186,11 @@ const userSchema = new mongoose.Schema({
   otpExpiresAt: { type: Date }
 });
 
+// Add indexes for frequently queried fields
+userSchema.index({ email: 1 });
+userSchema.index({ verificationToken: 1 });
+userSchema.index({ referralCode: 1 });
+
 const otpSchema = new mongoose.Schema({
   email: { type: String, required: true },
   otp: { type: String, required: true },
@@ -321,15 +326,23 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
-    // Check if user already exists
+    // Check if user already exists with timeout handling
     let existingUser;
     try {
-      existingUser = await User.findOne({ email })
-        .maxTimeMS(30000)
-        .lean()
-        .exec();
+      existingUser = await Promise.race([
+        User.findOne({ email }).lean().exec(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database operation timed out')), 15000)
+        )
+      ]);
     } catch (err) {
       console.error('Error checking for existing user:', err);
+      if (err.message === 'Database operation timed out') {
+        return res.status(503).json({ 
+          message: 'Service temporarily unavailable. Please try again in a few moments.',
+          retryAfter: 5
+        });
+      }
       return res.status(503).json({ message: 'Database connection error. Please try again.' });
     }
 
@@ -357,7 +370,24 @@ app.post('/api/register', async (req, res) => {
       referralCode: `TEMP-${Date.now()}` // Temporary unique code
     });
 
-    await user.save();
+    // Save user with timeout handling
+    try {
+      await Promise.race([
+        user.save(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database operation timed out')), 15000)
+        )
+      ]);
+    } catch (err) {
+      console.error('Error saving new user:', err);
+      if (err.message === 'Database operation timed out') {
+        return res.status(503).json({ 
+          message: 'Service temporarily unavailable. Please try again in a few moments.',
+          retryAfter: 5
+        });
+      }
+      return res.status(503).json({ message: 'Failed to create user. Please try again.' });
+    }
 
     // Send verification email
     const mailOptions = {
