@@ -349,15 +349,15 @@ app.post('/api/register', async (req, res) => {
                     <p style="color: #666; margin-top: 10px;">This code will expire in 15 minutes</p>
                 </div>
 
-                <p>Click the button below to verify your email address automatically:</p>
+                <p>Click the button below to verify your email address:</p>
                 <div style="text-align: center; margin: 20px 0;">
-                    <a href="${process.env.FRONTEND_URL}/verify.html?token=${verificationToken}" 
+                    <a href="https://ambassador.stemcsclub.org/verify.html?token=${verificationToken}" 
                        style="background-color: #4a90e2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
                         Verify Email Address
                     </a>
                 </div>
                 <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
-                <p style="word-break: break-all;">${process.env.FRONTEND_URL}/verify.html?token=${verificationToken}</p>
+                <p style="word-break: break-all;">https://ambassador.stemcsclub.org/verify.html?token=${verificationToken}</p>
                 <p>Best regards,<br>CS & Tech Ambassadors Team</p>
             </div>
         `
