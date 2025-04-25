@@ -457,10 +457,10 @@ app.post('/api/register', async (req, res) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: user.email,
-        subject: 'Verify your email for CS & Tech Ambassadors Program',
+        subject: 'Verify your email for STEM CSC Ambassadors Program',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #4a90e2;">Welcome to CS & Tech Ambassadors Program!</h1>
+                <h1 style="color: #4a90e2;">Welcome to STEM CSC Ambassadors Program!</h1>
                 <p>Hello ${user.name},</p>
                 <p>Your verification code is:</p>
                 
@@ -478,7 +478,7 @@ app.post('/api/register', async (req, res) => {
                 </div>
                 <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
                 <p style="word-break: break-all;">https://ambassador.stemcsclub.org/verify.html?token=${verificationToken}</p>
-                <p>Best regards,<br>CS & Tech Ambassadors Team</p>
+                <p>Best regards,<br>STEM CSC Management Board</p>
             </div>
         `
     };
