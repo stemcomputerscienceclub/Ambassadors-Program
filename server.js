@@ -64,23 +64,21 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 60000, // Increased from 30000
-  socketTimeoutMS: 90000, // Increased from 45000
+  serverSelectionTimeoutMS: 60000,
+  socketTimeoutMS: 90000,
   family: 4,
   retryWrites: true,
   retryReads: true,
-  maxPoolSize: 100, // Increased from 50
-  minPoolSize: 20, // Increased from 10
-  connectTimeoutMS: 60000, // Increased from 30000
-  heartbeatFrequencyMS: 5000, // Decreased for more frequent checks
-  waitQueueTimeoutMS: 60000, // Increased from 30000
+  maxPoolSize: 100,
+  minPoolSize: 20,
+  connectTimeoutMS: 60000,
+  heartbeatFrequencyMS: 5000,
+  waitQueueTimeoutMS: 60000,
   keepAlive: true,
   keepAliveInitialDelay: 300000,
-  maxIdleTimeMS: 300000, // Increased from 120000
+  maxIdleTimeMS: 300000,
   autoIndex: true,
-  autoCreate: true,
-  bufferCommands: true, // Explicitly enable command buffering
-  bufferTimeoutMS: 30000 // Set buffer timeout to 30 seconds
+  autoCreate: true
 };
 
 // Add connection event handlers with more detailed logging
@@ -107,6 +105,10 @@ mongoose.connection.on('error', (err) => {
   }
 });
 
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
+
 // Add monitoring for slow operations
 mongoose.set('debug', {
   color: true,
@@ -116,7 +118,7 @@ mongoose.set('debug', {
 
 // Function to connect to MongoDB with improved retry logic
 async function connectWithRetry() {
-  let retries = 10; // Increased from 5
+  let retries = 10;
   let delay = 1000;
 
   while (retries > 0) {

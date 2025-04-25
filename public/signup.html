@@ -16,7 +16,7 @@
       <div class="auth-header">
         <div class="logo">
           <img src="assets/logo.png" alt="STEM October Logo" width="40" height="40">
-          <span>STEM October</span>
+          <span>STEM CSC</span>
         </div>
         <h1>Create Account</h1>
         <p class="subtitle">Join our ambassador program</p>
@@ -184,6 +184,14 @@
         <span>${message}</span>
       `;
       document.body.appendChild(toast);
+
+      // Remove any existing toasts
+      const existingToasts = document.querySelectorAll('.toast');
+      existingToasts.forEach(t => {
+        if (t !== toast) {
+          t.remove();
+        }
+      });
 
       setTimeout(() => {
         toast.remove();
