@@ -1,6 +1,6 @@
 # STME CSC Ambassadors Program
 
-A web application for managing the CSC Club's Ambassador Program with email verification (OTP) functionality and Google Sheets integration for referral tracking.
+A web application for managing the CS Club's Ambassador Program with email verification (OTP) functionality and Google Sheets integration for referral tracking.
 
 ## Features
 

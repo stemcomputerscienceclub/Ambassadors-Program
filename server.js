@@ -7,7 +7,6 @@ import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
-import { google } from 'googleapis';
 import fs from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -29,30 +28,6 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.static('public'));
 
-// Load google credentials from file
-const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || './credentials.json';
-
-let googleAuth;
-let sheets;
-try {
-  if (fs.existsSync(CREDENTIALS_PATH)) {
-    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
-    googleAuth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-    });
-    sheets = google.sheets({ version: 'v4', auth: googleAuth });
-    console.log('Google API credentials loaded from:', CREDENTIALS_PATH);
-  } else {
-    console.log('Google API credentials file not found. Google Sheets integration will be disabled.');
-    googleAuth = null;
-    sheets = null;
-  }
-} catch (error) {
-  console.error('Failed to load Google API credentials:', error.message);
-  googleAuth = null;
-  sheets = null;
-}
 
 // Initialize update tracking
 let lastUpdateTime = new Date();
@@ -60,6 +35,9 @@ const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // MongoDB Connection with improved configuration
 const MONGODB_URI = process.env.MONGODB_URI;
+
+// Global connection state
+let isInitialized = false;
 
 const mongooseOptions = {
   useNewUrlParser: true,
@@ -78,8 +56,7 @@ const mongooseOptions = {
   keepAliveInitialDelay: 300000,
   maxIdleTimeMS: 120000,
   autoIndex: true,
-  autoCreate: true,
-  bufferCommands: false
+  autoCreate: true
 };
 
 let isConnected = false;
@@ -89,6 +66,7 @@ mongoose.connection.on('connected', () => {
   console.log('MongoDB connected successfully');
   console.log('Connection pool size:', mongoose.connection.client.s.options.maxPoolSize);
   isConnected = true;
+  isInitialized = true;
 });
 
 mongoose.connection.on('error', (err) => {
@@ -115,35 +93,51 @@ mongoose.connection.on('disconnected', () => {
   isConnected = false;
 });
 
-// Function to check if MongoDB is connected
-function isMongoDBConnected() {
-  return isConnected && mongoose.connection.readyState === 1;
+// Function to check if MongoDB is connected and initialized
+function isMongoDBReady() {
+  return isConnected && isInitialized && mongoose.connection.readyState === 1;
 }
 
-// Function to wait for MongoDB connection
-async function waitForConnection(timeout = 30000) {
-  if (isMongoDBConnected()) return true;
+// Function to wait for MongoDB connection and initialization
+async function waitForMongoDB(timeout = 30000) {
+  if (isMongoDBReady()) return true;
 
   return new Promise((resolve) => {
     const checkInterval = 500;
     let elapsed = 0;
-    console.log('Waiting for MongoDB connection...');
+    console.log('Waiting for MongoDB connection and initialization...');
 
     const timer = setInterval(() => {
       elapsed += checkInterval;
-      if (isMongoDBConnected()) {
+      if (isMongoDBReady()) {
         clearInterval(timer);
-        console.log('MongoDB connection established');
+        console.log('MongoDB connection established and initialized');
         resolve(true);
       } else if (elapsed >= timeout) {
         clearInterval(timer);
         console.log(`MongoDB connection wait timeout exceeded after ${timeout}ms`);
         resolve(false);
       } else if (elapsed % 5000 === 0) {
-        console.log(`Still waiting for MongoDB connection... (${elapsed}ms elapsed)`);
+        console.log(`Still waiting for MongoDB... (${elapsed}ms elapsed)`);
+        console.log('Connection state:', {
+          isConnected,
+          isInitialized,
+          readyState: mongoose.connection.readyState
+        });
       }
     }, checkInterval);
   });
+}
+
+// Function to ensure MongoDB is ready before operations
+async function ensureMongoDBReady() {
+  if (!isMongoDBReady()) {
+    console.log('MongoDB not ready, waiting for connection and initialization...');
+    const ready = await waitForMongoDB(30000);
+    if (!ready) {
+      throw new Error('MongoDB connection and initialization timeout');
+    }
+  }
 }
 
 // Function to connect to MongoDB with improved retry logic
@@ -155,6 +149,8 @@ async function connectWithRetry() {
   if (mongoose.connection.readyState !== 0) {
     console.log('Closing existing MongoDB connection...');
     await mongoose.connection.close();
+    isConnected = false;
+    isInitialized = false;
   }
 
   while (retries > 0) {
@@ -199,6 +195,7 @@ async function connectWithRetry() {
       if (retries === 0) {
         console.error('Failed to connect to MongoDB after all retries');
         isConnected = false;
+        isInitialized = false;
         if (process.env.NODE_ENV !== 'production') {
           process.exit(1);
         }
@@ -212,13 +209,19 @@ async function connectWithRetry() {
   }
 }
 
-// Connect to MongoDB
-connectWithRetry().catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
-  if (process.env.NODE_ENV !== 'production') {
-    process.exit(1);
+// Initialize MongoDB connection
+(async () => {
+  try {
+    await connectWithRetry();
+    await waitForMongoDB(30000);
+    console.log('MongoDB initialization complete');
+  } catch (err) {
+    console.error('Failed to initialize MongoDB:', err);
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
   }
-});
+})();
 
 // Add monitoring for slow operations
 mongoose.set('debug', {
@@ -226,6 +229,12 @@ mongoose.set('debug', {
   shell: true,
   slowMs: 100 // Log operations that take longer than 100ms
 });
+
+// Wrap database operations with connection check
+const withDBConnection = async (operation) => {
+  await ensureMongoDBReady();
+  return operation();
+};
 
 // MongoDB Models
 const userSchema = new mongoose.Schema({
@@ -366,9 +375,9 @@ async function generateNextReferralCode() {
 app.post('/api/register', async (req, res) => {
   try {
     // Check MongoDB connection first with longer timeout
-    if (!isMongoDBConnected()) {
+    if (!isMongoDBReady()) {
       console.log('MongoDB not connected, waiting for connection...');
-      const connected = await waitForConnection(30000); // 30 second timeout
+      const connected = await waitForMongoDB(30000); // 30 second timeout
       if (!connected) {
         console.error('MongoDB connection wait timeout exceeded');
         return res.status(503).json({ 
@@ -522,9 +531,9 @@ app.post('/api/verify', async (req, res) => {
         }
 
         // Check MongoDB connection first
-        if (!isMongoDBConnected()) {
+        if (!isMongoDBReady()) {
             console.log('MongoDB not connected, waiting for connection...');
-            const connected = await waitForConnection(30000);
+            const connected = await waitForMongoDB(30000);
             if (!connected) {
                 console.error('MongoDB connection wait timeout exceeded');
                 return res.status(503).json({ 
@@ -648,8 +657,11 @@ app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
+    // Find user with connection check
+    const user = await withDBConnection(async () => {
+      return User.findOne({ email });
+    });
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -683,7 +695,14 @@ app.post('/api/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    if (error.message === 'MongoDB connection and initialization timeout') {
+      res.status(503).json({ 
+        message: 'Database connection unavailable. Please try again in a few moments.',
+        retryAfter: 10
+      });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 });
 
@@ -803,62 +822,7 @@ app.get('/api/materials', authenticateToken, async (req, res) => {
 });
 
 // Function to update referral counts from Google Forms
-async function updateReferralCounts() {
-    if (!sheets) {
-        console.log('Google Sheets API not available - skipping referral count update');
-        return;
-    }
 
-    try {
-        // Get all responses from Google Sheet
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: process.env.GOOGLE_SHEET_ID,
-            range: 'Form Responses 1!A:Z'
-        });
-
-        const rows = response.data.values;
-        if (!rows || rows.length <= 1) return;
-
-    // Find the column with referral codes
-    const headers = rows[0];
-    const referralCodeColumn = headers.findIndex(header => 
-            header.toLowerCase().includes('where did you hear about us')
-    );
-
-    if (referralCodeColumn === -1) {
-            console.log('Referral code column not found in form responses');
-      return;
-    }
-
-        // Count referrals for each code
-    const referralCounts = {};
-        for (let i = 1; i < rows.length; i++) {
-            const response = rows[i][referralCodeColumn];
-            if (response) {
-                // Extract STEM-CSC-XXX codes from the response
-                const matches = response.match(/STEM-CSC-\d{3}/g);
-                if (matches) {
-                    matches.forEach(code => {
-      referralCounts[code] = (referralCounts[code] || 0) + 1;
-    });
-                }
-            }
-        }
-
-    // Update user counts
-        const users = await User.find({});
-        for (const user of users) {
-            if (user.referralCode && referralCounts[user.referralCode]) {
-                user.referralCount = referralCounts[user.referralCode];
-                await user.save();
-            }
-        }
-
-        console.log('Referral counts updated successfully');
-    } catch (error) {
-        console.error('Error updating referral counts:', error);
-    }
-}
 
 // Update counts every hour
 setInterval(updateReferralCounts, 3600000);
