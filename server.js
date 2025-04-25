@@ -78,18 +78,23 @@ const mongooseOptions = {
   keepAliveInitialDelay: 300000,
   maxIdleTimeMS: 300000,
   autoIndex: true,
-  autoCreate: true
+  autoCreate: true,
+  bufferCommands: false // Disable buffering
 };
+
+let isConnected = false;
 
 // Add connection event handlers with more detailed logging
 mongoose.connection.on('connected', () => {
   console.log('MongoDB connected successfully');
   console.log('Connection pool size:', mongoose.connection.client.s.options.maxPoolSize);
+  isConnected = true;
 });
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
   console.error('Full error details:', JSON.stringify(err, null, 2));
+  isConnected = false;
   
   if (err.name === 'MongooseServerSelectionError') {
     console.error('\nIMPORTANT: MongoDB Atlas IP Whitelist Issue');
@@ -107,6 +112,7 @@ mongoose.connection.on('error', (err) => {
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
+  isConnected = false;
 });
 
 // Add monitoring for slow operations
@@ -115,6 +121,32 @@ mongoose.set('debug', {
   shell: true,
   slowMs: 100 // Log operations that take longer than 100ms
 });
+
+// Function to check if MongoDB is connected
+function isMongoDBConnected() {
+  return isConnected && mongoose.connection.readyState === 1;
+}
+
+// Function to wait for MongoDB connection
+async function waitForConnection(timeout = 5000) {
+  if (isMongoDBConnected()) return true;
+
+  return new Promise((resolve) => {
+    const checkInterval = 100;
+    let elapsed = 0;
+
+    const timer = setInterval(() => {
+      elapsed += checkInterval;
+      if (isMongoDBConnected()) {
+        clearInterval(timer);
+        resolve(true);
+      } else if (elapsed >= timeout) {
+        clearInterval(timer);
+        resolve(false);
+      }
+    }, checkInterval);
+  });
+}
 
 // Function to connect to MongoDB with improved retry logic
 async function connectWithRetry() {
@@ -309,6 +341,18 @@ async function generateNextReferralCode() {
 // Register new user with better error handling
 app.post('/api/register', async (req, res) => {
   try {
+    // Check MongoDB connection first
+    if (!isMongoDBConnected()) {
+      const connected = await waitForConnection();
+      if (!connected) {
+        console.error('MongoDB not connected and connection wait timeout exceeded');
+        return res.status(503).json({ 
+          message: 'Database connection unavailable. Please try again in a few moments.',
+          retryAfter: 5
+        });
+      }
+    }
+
     const { name, email, phone, password } = req.body;
 
     // Validate inputs
@@ -329,21 +373,13 @@ app.post('/api/register', async (req, res) => {
     // Check if user already exists with timeout handling
     let existingUser;
     try {
-      existingUser = await Promise.race([
-        User.findOne({ email }).lean().exec(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database operation timed out')), 15000)
-        )
-      ]);
+      existingUser = await User.findOne({ email }).lean().maxTimeMS(5000).exec();
     } catch (err) {
       console.error('Error checking for existing user:', err);
-      if (err.message === 'Database operation timed out') {
-        return res.status(503).json({ 
-          message: 'Service temporarily unavailable. Please try again in a few moments.',
-          retryAfter: 5
-        });
-      }
-      return res.status(503).json({ message: 'Database connection error. Please try again.' });
+      return res.status(503).json({ 
+        message: 'Service temporarily unavailable. Please try again in a few moments.',
+        retryAfter: 5
+      });
     }
 
     if (existingUser) {
@@ -370,23 +406,15 @@ app.post('/api/register', async (req, res) => {
       referralCode: `TEMP-${Date.now()}` // Temporary unique code
     });
 
-    // Save user with timeout handling
+    // Save user with timeout
     try {
-      await Promise.race([
-        user.save(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database operation timed out')), 15000)
-        )
-      ]);
+      await user.save({ maxTimeMS: 5000 });
     } catch (err) {
       console.error('Error saving new user:', err);
-      if (err.message === 'Database operation timed out') {
-        return res.status(503).json({ 
-          message: 'Service temporarily unavailable. Please try again in a few moments.',
-          retryAfter: 5
-        });
-      }
-      return res.status(503).json({ message: 'Failed to create user. Please try again.' });
+      return res.status(503).json({ 
+        message: 'Failed to create user. Please try again.',
+        retryAfter: 5
+      });
     }
 
     // Send verification email
