@@ -106,7 +106,6 @@
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const remember = document.getElementById('remember').checked;
 
       try {
         const response = await fetch('/api/login', {
@@ -116,9 +115,7 @@
           },
           body: JSON.stringify({
             email,
-            password,
-            remember
-          })
+            password          })
         });
 
         const data = await response.json();
