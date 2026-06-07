@@ -6,4 +6,6 @@ credentials.json
 .DS_Store
 *.log
 .vscode/
-.idea/ 
+.idea/
+.serviceAccount.json
+serviceAccount.json
