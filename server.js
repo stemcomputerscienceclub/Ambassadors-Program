@@ -7,10 +7,12 @@ import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
+import { initializeFirestore, processFormResponses } from './scripts/processFormResponses.js';
 import fs from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
+initializeFirestore();
 
 const app = express();
 
@@ -18,7 +20,7 @@ const app = express();
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
     ? ['https://your-vercel-domain.vercel.app'] // Replace with your Vercel domain
-    : 'http://localhost:3000',
+    : true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -654,13 +656,12 @@ app.post('/api/verify', async (req, res) => {
 
 // Login
 app.post('/api/login', async (req, res) => {
+  console.log('Login route hit', req.body);
   try {
     const { email, password } = req.body;
 
     // Find user with connection check
-    const user = await withDBConnection(async () => {
-      return User.findOne({ email });
-    });
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -727,6 +728,7 @@ const authenticateToken = (req, res, next) => {
 // Dashboard data endpoint
 app.get('/api/dashboard', authenticateToken, async (req, res) => {
   try {
+    await processFormResponses(User);
     const user = await User.findOne({ email: req.user.email });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -825,10 +827,10 @@ app.get('/api/materials', authenticateToken, async (req, res) => {
 app.post('/api/update-referral-counts', async (req, res) => {
   console.log('Received request to update referral counts');
   console.log('Request body:', req.body);
-  
+
   try {
     const { referralCounts } = req.body;
-    
+
     if (!referralCounts || !Array.isArray(referralCounts)) {
       console.error('Invalid referral counts data:', referralCounts);
       return res.status(400).json({ message: 'Invalid referral counts data' });
@@ -840,7 +842,7 @@ app.post('/api/update-referral-counts', async (req, res) => {
     const results = await Promise.all(referralCounts.map(async ({ code, count }) => {
       console.log(`Processing referral code ${code} with count ${count}`);
       let retries = 3;
-      
+
       while (retries > 0) {
         try {
           await ensureMongoDBReady();
@@ -869,7 +871,7 @@ app.post('/api/update-referral-counts', async (req, res) => {
     const failures = results.filter(r => !r.success);
     if (failures.length > 0) {
       console.error('Some updates failed:', failures);
-      return res.status(207).json({ 
+      return res.status(207).json({
         message: 'Some updates failed',
         results,
         failures
@@ -880,7 +882,7 @@ app.post('/api/update-referral-counts', async (req, res) => {
     lastUpdateTime = new Date();
     console.log('All updates completed successfully at:', lastUpdateTime);
 
-    res.json({ 
+    res.json({
       message: 'Referral counts updated successfully',
       timestamp: lastUpdateTime,
       results
@@ -888,53 +890,53 @@ app.post('/api/update-referral-counts', async (req, res) => {
   } catch (error) {
     console.error('Error updating referral counts:', error);
     console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Failed to update referral counts',
-      error: error.message 
+      error: error.message
     });
   }
 });
 
 // Track referrals endpoint
 app.post('/api/track-referral', async (req, res) => {
-    try {
-        const { email, referralCode } = req.body;
+  try {
+    const { email, referralCode } = req.body;
 
-        // Validate input
-        if (!email || !referralCode) {
-            return res.status(400).json({ message: 'Email and referral code are required' });
-        }
-
-        await ensureMongoDBReady();
-
-        // Find the ambassador who referred this user
-        const ambassador = await User.findOne({ referralCode });
-        if (!ambassador) {
-            return res.status(404).json({ message: 'Invalid referral code' });
-        }
-
-        // Check if this email has already been referred
-        const existingReferral = await User.findOne({ email });
-        if (existingReferral) {
-            return res.status(400).json({ message: 'This email has already been referred' });
-        }
-
-        // Update ambassador's referral count
-        ambassador.referralCount = (ambassador.referralCount || 0) + 1;
-        await ambassador.save();
-
-        res.status(201).json({ message: 'Referral tracked successfully' });
-    } catch (error) {
-        console.error('Error tracking referral:', error);
-        if (error.message === 'MongoDB connection and initialization timeout') {
-            res.status(503).json({ 
-                message: 'Database connection unavailable. Please try again in a few moments.',
-                retryAfter: 10
-            });
-        } else {
-            res.status(500).json({ message: 'Error tracking referral' });
-        }
+    // Validate input
+    if (!email || !referralCode) {
+      return res.status(400).json({ message: 'Email and referral code are required' });
     }
+
+    await ensureMongoDBReady();
+
+    // Find the ambassador who referred this user
+    const ambassador = await User.findOne({ referralCode });
+    if (!ambassador) {
+      return res.status(404).json({ message: 'Invalid referral code' });
+    }
+
+    // Check if this email has already been referred
+    const existingReferral = await User.findOne({ email });
+    if (existingReferral) {
+      return res.status(400).json({ message: 'This email has already been referred' });
+    }
+
+    // Update ambassador's referral count
+    ambassador.referralCount = (ambassador.referralCount || 0) + 1;
+    await ambassador.save();
+
+    res.status(201).json({ message: 'Referral tracked successfully' });
+  } catch (error) {
+    console.error('Error tracking referral:', error);
+    if (error.message === 'MongoDB connection and initialization timeout') {
+      res.status(503).json({
+        message: 'Database connection unavailable. Please try again in a few moments.',
+        retryAfter: 10
+      });
+    } else {
+      res.status(500).json({ message: 'Error tracking referral' });
+    }
+  }
 });
 
 // Resend OTP endpoint
